@@ -1,0 +1,25 @@
+# Python virtual environment
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.env
+
+# Database
+carechrono.db
+
+# Node / Frontend build files
+node_modules/
+.next/
+out/
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
