@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { MessageCircle, X, Send } from "lucide-react"
+import { MessageCircle, Send, X } from "lucide-react"
 
 export default function ChatBot() {
   const [open, setOpen] = useState(false)
@@ -23,7 +23,7 @@ export default function ChatBot() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          message: message,
+          message,
         }),
       })
 
@@ -39,37 +39,37 @@ export default function ChatBot() {
 
   return (
     <>
-      {/* Floating Button */}
       <button
         onClick={() => setOpen(!open)}
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-sky-600 text-white shadow-lg flex items-center justify-center hover:bg-sky-500 z-50"
+        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-teal-700 text-white shadow-lg shadow-teal-700/20 hover:bg-teal-600"
+        aria-label={open ? "Close assistant" : "Open assistant"}
       >
         {open ? <X size={24} /> : <MessageCircle size={24} />}
       </button>
 
-      {/* Chat Window */}
       {open && (
-        <div className="fixed bottom-24 right-6 w-80 h-96 bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 flex flex-col">
-          <div className="p-4 border-b font-bold text-sky-600">
-            🤖 CareChrono AI Assistant
+        <div className="fixed bottom-24 right-6 z-50 flex h-96 w-80 flex-col rounded-lg border border-teal-100 bg-white shadow-2xl">
+          <div className="border-b border-teal-100 p-4 font-bold text-teal-800">
+            CareChrono AI Assistant
           </div>
 
-          <div className="flex-1 p-4 text-sm text-slate-700 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto p-4 text-sm text-slate-700">
             {loading ? "Thinking..." : reply}
           </div>
 
-          <div className="p-3 border-t flex gap-2">
+          <div className="flex gap-2 border-t border-teal-100 p-3">
             <input
               type="text"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Type your message..."
-              className="flex-1 border rounded-lg px-3 py-2 outline-none"
+              className="flex-1 rounded-lg border border-teal-200 px-3 py-2 outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
             />
 
             <button
               onClick={sendMessage}
-              className="bg-sky-600 text-white px-3 rounded-lg hover:bg-sky-500"
+              className="rounded-lg bg-teal-700 px-3 text-white hover:bg-teal-600"
+              aria-label="Send message"
             >
               <Send size={18} />
             </button>

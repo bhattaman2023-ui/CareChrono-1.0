@@ -7,30 +7,30 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "default", size = "default", ...props }, ref) => {
-    const baseStyles = "inline-flex items-center justify-center rounded-lg text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]"
+    const baseStyles = "inline-flex items-center justify-center rounded-lg text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 disabled:pointer-events-none disabled:opacity-50"
     
     let variantStyles = ""
     switch(variant) {
       case "default":
-        variantStyles = "bg-indigo-600 text-white hover:bg-indigo-500 shadow-md shadow-indigo-600/20"
+        variantStyles = "bg-teal-700 text-white hover:bg-teal-600 shadow-md shadow-teal-700/20"
         break
       case "teal":
-        variantStyles = "bg-teal-600 text-white hover:bg-teal-500 shadow-md shadow-teal-600/20"
+        variantStyles = "bg-teal-700 text-white hover:bg-teal-600 shadow-md shadow-teal-700/20"
         break
       case "outline":
-        variantStyles = "border border-slate-200 bg-transparent text-slate-700 hover:bg-slate-50 hover:text-slate-950"
+        variantStyles = "border border-teal-200 bg-white text-teal-800 hover:bg-teal-50 hover:text-teal-950"
         break
       case "secondary":
-        variantStyles = "bg-slate-100 text-slate-800 hover:bg-slate-200/80"
+        variantStyles = "bg-teal-50 text-teal-900 hover:bg-teal-100"
         break
       case "destructive":
         variantStyles = "bg-red-600 text-white hover:bg-red-500 shadow-md shadow-red-600/10"
         break
       case "ghost":
-        variantStyles = "text-slate-600 hover:bg-slate-50 hover:text-slate-950"
+        variantStyles = "text-teal-800 hover:bg-teal-50 hover:text-teal-950"
         break
       case "link":
-        variantStyles = "text-indigo-400 underline-offset-4 hover:underline"
+        variantStyles = "text-teal-700 underline-offset-4 hover:underline"
         break
     }
     
