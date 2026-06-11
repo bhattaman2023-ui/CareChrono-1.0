@@ -2,6 +2,7 @@
 
 import React, { useCallback, useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
+import { motion, AnimatePresence } from "framer-motion"
 import { 
   ArrowLeft, 
   Download, 
@@ -13,11 +14,12 @@ import {
   ChevronDown, 
   ChevronRight,
   ClipboardCheck,
-  Loader2
+  Loader2, Brain
 } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Timeline, TimelineEvent } from "@/components/Timeline"
+import { pageFade, sectionReveal, staggerChildren, cardReveal } from "@/components/motion-presets"
 import { 
   LineChart, 
   Line, 
@@ -272,8 +274,13 @@ export default function DoctorPatientReview() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-8 w-8 text-sky-600 animate-spin" />
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative">
+            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-sky-500 to-cyan-500 flex items-center justify-center shadow-xl shadow-sky-500/30">
+              <Brain className="h-7 w-7 text-white animate-pulse" />
+            </div>
+            <span className="absolute inset-0 rounded-2xl border-2 border-sky-400/40 animate-ping" />
+          </div>
           <p className="text-slate-500 font-semibold text-sm">Compiling clinical board...</p>
         </div>
       </div>
@@ -291,136 +298,168 @@ export default function DoctorPatientReview() {
     )
   }
 
+  const initials = patient.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().substring(0, 2)
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans">
-      
+    <motion.div
+      variants={pageFade}
+      initial="hidden"
+      animate="visible"
+      className="min-h-screen text-slate-800 flex flex-col font-sans"
+      style={{ background: "linear-gradient(160deg, #f0f9ff 0%, #f8fafc 50%, #f0fdf4 100%)" }}
+    >
       {/* Header */}
-      <header className="border-b border-slate-100 bg-white shadow-sm sticky top-0 z-40">
+      <motion.header
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5 }}
+        className="border-b border-white/60 bg-white/80 shadow-sm sticky top-0 z-40 backdrop-blur-md"
+      >
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button 
+            <motion.button
+              whileHover={{ scale: 1.06, x: -2 }}
+              whileTap={{ scale: 0.94 }}
               onClick={() => router.push("/doctor-portal")}
-              className="p-2 rounded-xl border border-slate-200 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-all active:scale-95"
+              className="p-2 rounded-xl border border-slate-200 bg-white text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-all shadow-sm"
             >
               <ArrowLeft className="h-4 w-4" />
-            </button>
-            <div className="flex items-center gap-2">
-              <span className="text-lg font-extrabold text-slate-900">{patient.name}</span>
-              <span className="text-xs font-mono font-bold text-slate-400 border border-slate-100 bg-slate-50 rounded px-2 py-0.5">{patient.medical_record_number}</span>
+            </motion.button>
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-sky-500 to-cyan-500 flex items-center justify-center text-sm font-bold text-white shadow-lg shadow-sky-500/25">
+                {initials}
+              </div>
+              <div>
+                <span className="text-base font-extrabold text-slate-900">{patient.name}</span>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-[10px] font-mono text-sky-600 border border-sky-200 bg-sky-50 rounded px-1.5 py-0.5">{patient.medical_record_number}</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                    patient.risk_score === "High" ? "bg-red-50 border-red-200 text-red-600" : "bg-emerald-50 border-emerald-200 text-emerald-600"
+                  }`}>{patient.risk_score} Risk</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <Button 
-            onClick={downloadPDFReport}
-            className="flex items-center gap-1.5 bg-sky-600 hover:bg-sky-500 text-white shadow-md shadow-sky-600/10"
-            size="sm"
-          >
-            <Download className="h-4 w-4" />
-            <span>Export Report</span>
-          </Button>
+          <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+            <Button
+              onClick={downloadPDFReport}
+              className="flex items-center gap-1.5 bg-sky-600 hover:bg-sky-500 text-white shadow-md shadow-sky-600/15 rounded-xl px-4 font-bold"
+            >
+              <Download className="h-4 w-4" />
+              <span>Export Report</span>
+            </Button>
+          </motion.div>
         </div>
-      </header>
+      </motion.header>
 
-      {/* Grid Layout splits */}
+      {/* Grid Layout */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* Left Column: Metrics & Progression Summaries (5/12 cols) */}
-        <div className="lg:col-span-5 space-y-6">
+        {/* Left Column (5/12 cols) */}
+        <motion.div
+          variants={staggerChildren}
+          initial="hidden"
+          animate="visible"
+          className="lg:col-span-5 space-y-5"
+        >
           
           {/* Patient Card */}
-          <Card className="bg-white border-slate-100 p-5 space-y-4 text-left">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Patient Details</h3>
+          <motion.div variants={cardReveal}>
+          <Card className="bg-white border-slate-200 shadow-sm p-5 space-y-4 text-left rounded-2xl">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">Patient Details</h3>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <span className="block text-xs text-slate-400 font-semibold mb-0.5">Date of Birth</span>
-                <span className="font-extrabold text-slate-800 flex items-center gap-1.5">
-                  <Calendar className="h-4 w-4 text-sky-500" />
+                <span className="block text-[10px] text-slate-400 uppercase tracking-widest mb-1">Date of Birth</span>
+                <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                  <Calendar className="h-3.5 w-3.5 text-sky-500" />
                   {patient.date_of_birth}
                 </span>
               </div>
-              
               <div>
-                <span className="block text-xs text-slate-400 font-semibold mb-0.5">Gender</span>
-                <span className="font-extrabold text-slate-800 flex items-center gap-1.5">
-                  <User className="h-4 w-4 text-teal-500" />
+                <span className="block text-[10px] text-slate-400 uppercase tracking-widest mb-1">Gender</span>
+                <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                  <User className="h-3.5 w-3.5 text-teal-500" />
                   {patient.gender}
                 </span>
               </div>
             </div>
           </Card>
+          </motion.div>
 
-          {/* AI DIAGNOSTIC PROGRESION CARD */}
-          <Card className="bg-gradient-to-br from-white to-sky-50/20 border-sky-100 p-5 space-y-4 text-left relative overflow-hidden">
-            <div className="absolute right-0 top-0 w-24 h-24 bg-sky-200/20 rounded-full blur-2xl pointer-events-none" />
-            
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-1.5 text-sky-600">
-                <Sparkles className="h-5 w-5 animate-pulse" />
-                <h3 className="text-base font-extrabold text-slate-800">AI Diagnostic Intelligence</h3>
-              </div>
-
-              {/* Risk Alert Badge */}
-              <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border uppercase tracking-wider ${
-                patient.risk_score === "High" 
-                  ? "bg-red-50 border-red-200 text-red-600" 
-                  : "bg-emerald-50 border-emerald-200 text-emerald-600"
-              }`}>
-                {patient.risk_score} Risk
-              </span>
+          {/* AI Diagnostic Card */}
+          <motion.div variants={cardReveal}>
+          <div
+            className="rounded-2xl border border-sky-200/60 p-5 space-y-4 text-left relative overflow-hidden shadow-sm"
+            style={{ background: "linear-gradient(135deg, rgba(240,249,255,0.95), rgba(255,255,255,0.9))" }}
+          >
+            <div className="absolute -right-6 -top-6 w-24 h-24 bg-sky-300/15 rounded-full blur-2xl pointer-events-none" />
+            <div className="flex items-center gap-2 text-sky-600 border-b border-sky-100 pb-3">
+              <Sparkles className="h-4.5 w-4.5 animate-pulse" />
+              <h3 className="text-sm font-extrabold text-slate-800">AI Diagnostic Intelligence</h3>
             </div>
-
             <div className="space-y-3">
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wide">
-                <TrendingUp className="h-4.5 w-4.5 text-indigo-500" />
-                <span>Trend: {patient.progression_trend}</span>
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-widest">
+                <TrendingUp className="h-3.5 w-3.5 text-indigo-500" />
+                <span>Progression: {patient.progression_trend}</span>
               </div>
-              
-              <div className="text-sm text-slate-600 leading-relaxed font-semibold bg-slate-50/80 border border-slate-100 rounded-2xl p-4">
+              <div className="text-sm text-slate-600 leading-relaxed font-medium bg-white/80 border border-sky-100 rounded-xl p-4">
                 &quot;{patient.summary || "No active summary."}&quot;
               </div>
             </div>
-          </Card>
+          </div>
+          </motion.div>
 
           {/* Consultation Note Editor */}
-          <Card className="bg-white border-slate-100 p-5 space-y-4 text-left">
-            <h3 className="text-base font-bold text-slate-800">New Consultation Record</h3>
-            
+          <motion.div variants={cardReveal}>
+          <Card className="bg-white border-slate-200 shadow-sm p-5 space-y-4 text-left rounded-2xl">
+            <h3 className="text-sm font-bold text-slate-800">New Consultation Record</h3>
             <form onSubmit={handleAddDoctorNote} className="space-y-3">
-              {error && (
-                <div className="p-3 text-xs rounded-xl bg-red-50 border border-red-100 text-red-600">
-                  {error}
-                </div>
-              )}
-              <div>
-                <textarea
-                  rows={4}
-                  required
-                  className="w-full rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-800 placeholder:text-slate-400 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 resize-y"
-                  placeholder="Record patient notes and diagnostics here..."
-                  value={noteContent}
-                  onChange={(e) => setNoteContent(e.target.value)}
-                />
-              </div>
-
+              <AnimatePresence>
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    className="p-3 text-xs rounded-xl bg-red-50 border border-red-100 text-red-600"
+                  >
+                    {error}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              <textarea
+                rows={4}
+                required
+                className="w-full rounded-xl border-2 border-slate-200 bg-slate-50/60 p-4 text-sm text-slate-800 placeholder:text-slate-400 focus:border-sky-400 focus:outline-none focus:bg-white resize-y transition-all"
+                placeholder="Record patient notes and diagnostics here..."
+                value={noteContent}
+                onChange={(e) => setNoteContent(e.target.value)}
+              />
               <div className="flex items-center justify-end">
-                <Button 
-                  type="submit" 
-                  className="bg-sky-600 hover:bg-sky-500 text-white font-bold px-5 py-2 shadow shadow-sky-600/10"
+                <motion.button
+                  type="submit"
                   disabled={noteSubmitLoading || !noteContent.trim()}
+                  whileHover={!noteSubmitLoading ? { scale: 1.03 } : {}}
+                  whileTap={!noteSubmitLoading ? { scale: 0.97 } : {}}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-sky-600 to-cyan-600 text-white font-bold text-sm shadow-lg shadow-sky-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
-                  {noteSubmitLoading ? "Saving..." : "Save Consultation Note"}
-                </Button>
+                  {noteSubmitLoading ? (
+                    <><Loader2 className="h-4 w-4 animate-spin" /><span>Saving...</span></>
+                  ) : "Save Consultation Note"}
+                </motion.button>
               </div>
             </form>
           </Card>
+          </motion.div>
 
-          {/* Consultation notes Log History */}
-          <Card className="bg-white border-slate-100 p-5 space-y-3 text-left">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Consultation Notes history ({notes.length})</h3>
+          {/* Consultation Log */}
+          <motion.div variants={cardReveal}>
+          <Card className="bg-white border-slate-200 shadow-sm p-5 space-y-3 text-left rounded-2xl">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">Consultation History ({notes.length})</h3>
             {notes.length === 0 ? (
               <p className="text-xs text-slate-400 italic py-2 text-center">No logs documented yet.</p>
             ) : (
-              <div className="divide-y divide-slate-100 max-h-[200px] overflow-y-auto pr-1">
+              <div className="divide-y divide-slate-100 max-h-[220px] overflow-y-auto pr-1">
                 {notes.map((note) => {
                   const isExpanded = expandedNotes[note.id]
                   return (
@@ -433,27 +472,46 @@ export default function DoctorPatientReview() {
                           <FileText className="h-3.5 w-3.5 text-sky-500" />
                           {new Date(note.date).toLocaleString()}
                         </span>
-                        {isExpanded ? <ChevronDown className="h-4 w-4 text-slate-400" /> : <ChevronRight className="h-4 w-4 text-slate-400" />}
+                        <motion.span animate={{ rotate: isExpanded ? 90 : 0 }} transition={{ duration: 0.2 }}>
+                          <ChevronRight className="h-4 w-4 text-slate-400" />
+                        </motion.span>
                       </button>
-                      {isExpanded && (
-                        <p className="mt-2 text-xs text-slate-500 leading-relaxed bg-slate-50/50 p-3 border border-slate-100 rounded-xl font-medium">
-                          {note.content}
-                        </p>
-                      )}
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.22 }}
+                            className="overflow-hidden"
+                          >
+                            <p className="mt-2 text-xs text-slate-500 leading-relaxed bg-slate-50 p-3 border border-slate-100 rounded-xl font-medium">
+                              {note.content}
+                            </p>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   )
                 })}
               </div>
             )}
           </Card>
+          </motion.div>
 
-        </div>
+        </motion.div>
 
-        {/* Right Column: Trend Graph, Interactive Timeline,Prepared Checklist (7/12 cols) */}
-        <div className="lg:col-span-7 space-y-6">
+        {/* Right Column (7/12 cols) */}
+        <motion.div
+          variants={sectionReveal}
+          initial="hidden"
+          animate="visible"
+          transition={{ delay: 0.15 }}
+          className="lg:col-span-7 space-y-6"
+        >
           
-          {/* RECHARTS DAILY PROGRESSION CHART */}
-          <Card className="bg-white border-slate-100 p-5 space-y-4 text-left">
+          {/* Chart Card */}
+          <Card className="bg-white border-slate-200 shadow-sm rounded-2xl p-5 space-y-4 text-left">
             <div>
               <h3 className="text-base font-bold text-slate-800">Symptom Severity Trend</h3>
               <p className="text-xs text-slate-400 mt-0.5">Peak logged daily severity (Mild = 1, Moderate = 2, Severe = 3)</p>
@@ -500,8 +558,8 @@ export default function DoctorPatientReview() {
             </div>
           </Card>
 
-          {/* DYNAMIC CLINICAL CHECKLIST WIDGET */}
-          <Card className="bg-gradient-to-br from-white to-teal-50/10 border-slate-100 p-5 space-y-4 text-left">
+          {/* Checklist */}
+          <Card className="bg-gradient-to-br from-white to-teal-50/20 border-teal-100/60 shadow-sm rounded-2xl p-5 space-y-4 text-left">
             <div className="flex items-center gap-2 text-teal-600">
               <ClipboardCheck className="h-5 w-5" />
               <h3 className="text-base font-bold text-slate-800">Clinical Preparedness checklist</h3>
@@ -523,23 +581,19 @@ export default function DoctorPatientReview() {
             </div>
           </Card>
 
-          {/* INTERACTIVE TIMELINE EVENT LIST */}
-          <Card className="bg-white border-slate-100 p-5 space-y-4 text-left">
+          {/* Timeline */}
+          <Card className="bg-white border-slate-200 shadow-sm rounded-2xl p-5 space-y-4 text-left">
             <div>
               <h3 className="text-base font-bold text-slate-800">Symptom Timeline Pathway</h3>
-              <p className="text-xs text-slate-400 mt-0.5">Visually tracking the sequence of logged symptoms</p>
+              <p className="text-xs text-slate-400 mt-0.5">AI-extracted clinical progression from logged symptoms</p>
             </div>
-            
-            <div>
-              {/* Load Timeline component */}
-              <Timeline events={timelineEvents} />
-            </div>
+            <Timeline events={timelineEvents} />
           </Card>
 
-        </div>
+        </motion.div>
 
       </main>
 
-    </div>
+    </motion.div>
   )
 }

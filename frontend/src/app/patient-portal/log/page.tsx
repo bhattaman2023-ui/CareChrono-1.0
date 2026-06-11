@@ -1,24 +1,32 @@
-﻿"use client"
+"use client"
 
 import React, { useCallback, useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { ArrowLeft, Check, Loader2, Sparkles, AlertCircle, Activity } from "lucide-react"
-import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { motion, AnimatePresence } from "framer-motion"
+import { ArrowLeft, Check, Loader2, Sparkles, AlertCircle, Activity, Brain } from "lucide-react"
 import { VoiceRecorder } from "@/components/VoiceRecorder"
+import { pageFade, sectionReveal, staggerFast, cardReveal } from "@/components/motion-presets"
 
 const getErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : "Something went wrong"
 
+const SYMPTOMS_LIST = [
+  { label: "Fever",          emoji: "🤒", color: "from-red-50 to-orange-50    border-red-400    text-red-800    shadow-red-100" },
+  { label: "Cough",          emoji: "🤧", color: "from-sky-50 to-cyan-50      border-sky-400    text-sky-800    shadow-sky-100" },
+  { label: "Fatigue",        emoji: "😴", color: "from-violet-50 to-purple-50 border-violet-400 text-violet-800 shadow-violet-100" },
+  { label: "Headache",       emoji: "🤕", color: "from-amber-50 to-yellow-50  border-amber-400  text-amber-800  shadow-amber-100" },
+  { label: "Breathlessness", emoji: "😮‍💨", color: "from-teal-50 to-emerald-50  border-teal-400   text-teal-800   shadow-teal-100" },
+  { label: "Joint Pain",     emoji: "🦵", color: "from-rose-50 to-pink-50     border-rose-400   text-rose-800   shadow-rose-100" },
+]
+
 function SymptomLogContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  
+
   const patientId = searchParams.get("patient_id") || "1"
   const preSelectedSymptom = searchParams.get("symptom") || ""
   const dictationText = searchParams.get("dictation") || ""
 
-  // Form States
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>(() =>
     preSelectedSymptom ? [preSelectedSymptom] : []
   )
@@ -27,23 +35,12 @@ function SymptomLogContent() {
   )
   const [notes, setNotes] = useState(dictationText)
   const [logDate, setLogDate] = useState(() => new Date().toISOString().split("T")[0])
-  
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  const SYMPTOMS_LIST = [
-    { label: "Fever", emoji: "🤒" },
-    { label: "Cough", emoji: "🤧" },
-    { label: "Fatigue", emoji: "😴" },
-    { label: "Headache", emoji: "🤕" },
-    { label: "Breathlessness", emoji: "😮‍💨" },
-    { label: "Joint Pain", emoji: "🦵" }
-  ]
 
   const toggleSymptom = useCallback((label: string) => {
     setSelectedSymptoms(prev => {
       if (prev.includes(label)) {
-        // Remove symptom and its severity
         setSeverities(prevSevs => {
           const updatedSevs = { ...prevSevs }
           delete updatedSevs[label]
@@ -51,7 +48,6 @@ function SymptomLogContent() {
         })
         return prev.filter(s => s !== label)
       } else {
-        // Add symptom and default severity to Medium
         setSeverities(prevSevs => ({ ...prevSevs, [label]: "Medium" }))
         return [...prev, label]
       }
@@ -59,10 +55,7 @@ function SymptomLogContent() {
   }, [])
 
   const handleSeverityChange = (symptomLabel: string, severityLevel: string) => {
-    setSeverities(prev => ({
-      ...prev,
-      [symptomLabel]: severityLevel
-    }))
+    setSeverities(prev => ({ ...prev, [symptomLabel]: severityLevel }))
   }
 
   const handleVoiceTranscription = (text: string) => {
@@ -75,12 +68,9 @@ function SymptomLogContent() {
       setError("Please select at least one symptom to log.")
       return
     }
-
     setLoading(true)
     setError(null)
-
     try {
-      // 1. Submit Symptom Log
       const logRes = await fetch(`http://localhost:8000/api/patients/${patientId}/symptoms`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -91,10 +81,8 @@ function SymptomLogContent() {
           date: logDate
         })
       })
-
       if (!logRes.ok) throw new Error("Failed to save symptom log")
 
-      // 2. Trigger AI timeline and summary compilation
       const compileRes = await fetch(`http://localhost:8000/api/patients/${patientId}/compile-timeline`, {
         method: "POST"
       })
@@ -108,160 +96,257 @@ function SymptomLogContent() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans">
-      
+    <motion.div
+      variants={pageFade}
+      initial="hidden"
+      animate="visible"
+      className="min-h-screen text-slate-800 flex flex-col font-sans"
+      style={{
+        background: "linear-gradient(160deg, #f0f9ff 0%, #f8fafc 50%, #f0fdf4 100%)",
+      }}
+    >
       {/* Header */}
-      <header className="bg-white border-b border-slate-100 py-4 shadow-sm sticky top-0 z-30">
+      <motion.header
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5 }}
+        className="bg-white/80 border-b border-slate-100 py-4 shadow-sm sticky top-0 z-30 backdrop-blur-md"
+      >
         <div className="max-w-3xl mx-auto px-4 flex items-center justify-between">
-          <button 
+          <motion.button
+            whileHover={{ scale: 1.04, x: -2 }}
+            whileTap={{ scale: 0.96 }}
             onClick={() => router.push("/patient-portal")}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-xs"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border-2 border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 font-bold text-xs shadow-sm transition-all"
           >
             <ArrowLeft className="h-4 w-4" />
-            Cancel
-          </button>
-          
-          <h2 className="text-base font-extrabold text-slate-800">Log Symptoms</h2>
-          
-          <div className="w-16" /> {/* Spacer */}
-        </div>
-      </header>
+            Back
+          </motion.button>
 
-      {/* Main Logging Form */}
-      <main className="flex-1 max-w-2xl w-full mx-auto px-4 py-8">
-        <form onSubmit={handleSubmit} className="space-y-6 text-left">
-          
-          {error && (
-            <div className="p-4 text-sm rounded-2xl bg-red-50 border border-red-100 text-red-600 flex items-start gap-2">
-              <AlertCircle className="h-5 w-5 shrink-0" />
-              <span>{error}</span>
+          <div className="flex items-center gap-2">
+            <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-sky-500 to-cyan-500 flex items-center justify-center shadow-md shadow-sky-500/25">
+              <Activity className="h-4 w-4 text-white" />
             </div>
-          )}
+            <h2 className="text-sm font-extrabold text-slate-800">Log Symptoms</h2>
+          </div>
 
-          {/* 1. Date Card */}
-          <Card className="bg-white border-slate-100 p-5 space-y-3">
-            <label className="block text-sm font-extrabold uppercase tracking-wide text-slate-400">Log Date</label>
-            <input 
+          <div className="w-16" />
+        </div>
+      </motion.header>
+
+      {/* Main */}
+      <main className="flex-1 max-w-2xl w-full mx-auto px-4 py-8">
+        <form onSubmit={handleSubmit} className="space-y-6">
+
+          <AnimatePresence>
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="p-4 text-sm rounded-2xl bg-red-50 border border-red-200 text-red-600 flex items-start gap-2"
+              >
+                <AlertCircle className="h-5 w-5 shrink-0" />
+                <span>{error}</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Step 1: Date */}
+          <motion.div
+            variants={sectionReveal}
+            initial="hidden"
+            animate="visible"
+            className="bg-white/90 border border-slate-200 rounded-2xl p-5 space-y-3 shadow-sm"
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <span className="h-6 w-6 rounded-full bg-sky-100 border border-sky-200 text-sky-600 flex items-center justify-center text-xs font-black">1</span>
+              <label className="text-sm font-extrabold uppercase tracking-wide text-slate-600">Log Date</label>
+            </div>
+            <input
               type="date"
-              className="w-full h-12 rounded-xl border border-slate-200 px-4 text-base focus:outline-none focus:border-sky-500 cursor-pointer"
+              className="w-full h-12 rounded-xl border-2 border-slate-200 px-4 text-base focus:outline-none focus:border-sky-400 cursor-pointer transition-colors bg-slate-50"
               value={logDate}
               onChange={(e) => setLogDate(e.target.value)}
             />
-          </Card>
+          </motion.div>
 
-          {/* 2. Symptom Selection Grid */}
-          <Card className="bg-white border-slate-100 p-5 space-y-4">
-            <div>
-              <h3 className="text-lg font-bold text-slate-800">Select Symptoms</h3>
-              <p className="text-xs text-slate-400 mt-0.5">Which symptoms are you experiencing today? Select all that apply.</p>
+          {/* Step 2: Symptoms */}
+          <motion.div
+            variants={sectionReveal}
+            initial="hidden"
+            animate="visible"
+            transition={{ delay: 0.05 }}
+            className="bg-white/90 border border-slate-200 rounded-2xl p-5 space-y-4 shadow-sm"
+          >
+            <div className="flex items-center gap-2">
+              <span className="h-6 w-6 rounded-full bg-sky-100 border border-sky-200 text-sky-600 flex items-center justify-center text-xs font-black">2</span>
+              <div>
+                <h3 className="text-base font-extrabold text-slate-800">Select Symptoms</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Which symptoms are you experiencing today?</p>
+              </div>
+              {selectedSymptoms.length > 0 && (
+                <span className="ml-auto text-xs font-bold text-sky-600 bg-sky-50 border border-sky-200 px-2.5 py-0.5 rounded-full">
+                  {selectedSymptoms.length} selected
+                </span>
+              )}
             </div>
-            
-            <div className="grid grid-cols-2 gap-3">
+
+            <motion.div
+              variants={staggerFast}
+              initial="hidden"
+              animate="visible"
+              className="grid grid-cols-2 gap-3"
+            >
               {SYMPTOMS_LIST.map((item) => {
                 const isSelected = selectedSymptoms.includes(item.label)
                 return (
-                  <button
-                    type="button"
+                  <motion.button
                     key={item.label}
+                    variants={cardReveal}
+                    type="button"
                     onClick={() => toggleSymptom(item.label)}
-                    className={`flex items-center gap-3 p-4 rounded-2xl border text-left transition-all duration-300 ${
-                      isSelected 
-                        ? "border-sky-500 bg-sky-500/10 text-sky-800 font-extrabold" 
-                        : "border-slate-100 bg-slate-50/40 text-slate-600 hover:border-slate-200"
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    className={`flex items-center gap-3 p-4 rounded-2xl border-2 text-left transition-all duration-250 ${
+                      isSelected
+                        ? `bg-gradient-to-br ${item.color} shadow-md`
+                        : "border-slate-200 bg-slate-50/60 text-slate-600 hover:border-slate-300 hover:bg-white"
                     }`}
                   >
-                    <span className="text-2xl">{item.emoji}</span>
-                    <span className="text-sm flex-1">{item.label}</span>
-                    {isSelected && (
-                      <span className="h-5 w-5 rounded-full bg-sky-600 text-white flex items-center justify-center">
-                        <Check className="h-3 w-3" />
-                      </span>
-                    )}
-                  </button>
+                    <motion.span
+                      animate={isSelected ? { scale: [1, 1.2, 1] } : {}}
+                      transition={{ duration: 0.3 }}
+                      className="text-2xl"
+                    >
+                      {item.emoji}
+                    </motion.span>
+                    <span className="text-sm font-bold flex-1">{item.label}</span>
+                    <AnimatePresence>
+                      {isSelected && (
+                        <motion.span
+                          initial={{ scale: 0, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0, opacity: 0 }}
+                          transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                          className="h-5 w-5 rounded-full bg-sky-600 text-white flex items-center justify-center shrink-0"
+                        >
+                          <Check className="h-3 w-3" />
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </motion.button>
                 )
               })}
-            </div>
-          </Card>
+            </motion.div>
+          </motion.div>
 
-          {/* 3. Severity Selectors for Selected Symptoms */}
-          {selectedSymptoms.length > 0 && (
-            <Card className="bg-white border-slate-100 p-5 space-y-4">
-              <div>
-                <h3 className="text-lg font-bold text-slate-800">How bad is each symptom?</h3>
-                <p className="text-xs text-slate-400 mt-0.5">Set the severity rating for today.</p>
-              </div>
-
-              <div className="space-y-4 divide-y divide-slate-100">
-                {selectedSymptoms.map((sym, idx) => {
-                  const currentSev = severities[sym] || "Medium"
-                  return (
-                    <div key={sym} className={`space-y-2 ${idx > 0 ? "pt-4" : ""}`}>
-                      <span className="text-sm font-extrabold text-slate-700 block">{sym} Severity:</span>
-                      
-                      <div className="grid grid-cols-3 gap-2">
-                        {["Low", "Medium", "High"].map((lvl) => {
-                          const isSel = currentSev === lvl
-                          let btnColor = "border-slate-100 bg-slate-50/40 text-slate-500"
-                          if (isSel) {
-                            if (lvl === "Low") btnColor = "bg-indigo-500 text-white border-indigo-600 shadow shadow-indigo-500/20 font-bold"
-                            if (lvl === "Medium") btnColor = "bg-amber-500 text-white border-amber-600 shadow shadow-amber-500/20 font-bold"
-                            if (lvl === "High") btnColor = "bg-red-500 text-white border-red-600 shadow shadow-red-500/20 font-bold"
-                          }
-                          return (
-                            <button
-                              type="button"
-                              key={lvl}
-                              onClick={() => handleSeverityChange(sym, lvl)}
-                              className={`h-11 rounded-xl border text-sm font-semibold transition-all ${btnColor}`}
-                            >
-                              {lvl === "Low" ? "Mild" : lvl === "Medium" ? "Moderate" : "Severe"}
-                            </button>
-                          )
-                        })}
-                      </div>
+          {/* Step 3: Severity */}
+          <AnimatePresence>
+            {selectedSymptoms.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                className="overflow-hidden"
+              >
+                <div className="bg-white/90 border border-slate-200 rounded-2xl p-5 space-y-5 shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="h-6 w-6 rounded-full bg-sky-100 border border-sky-200 text-sky-600 flex items-center justify-center text-xs font-black">3</span>
+                    <div>
+                      <h3 className="text-base font-extrabold text-slate-800">How bad is each symptom?</h3>
+                      <p className="text-xs text-slate-400 mt-0.5">Set the severity for today&apos;s entries.</p>
                     </div>
-                  )
-                })}
+                  </div>
+
+                  <div className="space-y-5 divide-y divide-slate-100">
+                    {selectedSymptoms.map((sym, idx) => {
+                      const currentSev = severities[sym] || "Medium"
+                      return (
+                        <motion.div
+                          key={sym}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: idx * 0.06 }}
+                          className={`space-y-2.5 ${idx > 0 ? "pt-4" : ""}`}
+                        >
+                          <span className="text-sm font-bold text-slate-700 block">{sym} Severity</span>
+                          <div className="grid grid-cols-3 gap-2">
+                            {[
+                              { key: "Low",    label: "Mild",     color: "from-sky-500 to-indigo-500",   sel: "bg-gradient-to-r from-sky-500 to-indigo-500 text-white border-transparent shadow-lg shadow-sky-500/20" },
+                              { key: "Medium", label: "Moderate", color: "from-amber-400 to-orange-500", sel: "bg-gradient-to-r from-amber-400 to-orange-500 text-white border-transparent shadow-lg shadow-amber-500/20" },
+                              { key: "High",   label: "Severe",   color: "from-red-500 to-rose-600",     sel: "bg-gradient-to-r from-red-500 to-rose-600 text-white border-transparent shadow-lg shadow-red-500/20" },
+                            ].map(({ key, label, sel }) => (
+                              <motion.button
+                                key={key}
+                                type="button"
+                                whileHover={{ scale: 1.04 }}
+                                whileTap={{ scale: 0.96 }}
+                                onClick={() => handleSeverityChange(sym, key)}
+                                className={`h-11 rounded-xl border-2 text-sm font-bold transition-all duration-200 ${
+                                  currentSev === key ? sel : "border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300"
+                                }`}
+                              >
+                                {label}
+                              </motion.button>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Step 4: Notes + Voice */}
+          <motion.div
+            variants={sectionReveal}
+            initial="hidden"
+            animate="visible"
+            transition={{ delay: 0.1 }}
+            className="bg-white/90 border border-slate-200 rounded-2xl p-5 space-y-4 shadow-sm"
+          >
+            <div className="flex items-center gap-2">
+              <span className="h-6 w-6 rounded-full bg-sky-100 border border-sky-200 text-sky-600 flex items-center justify-center text-xs font-black">4</span>
+              <div>
+                <h3 className="text-base font-extrabold text-slate-800">Notes or Voice Recording</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Describe how you feel. Tap below to speak.</p>
               </div>
-            </Card>
-          )}
-
-          {/* 4. Notes / Voice Recorder Card */}
-          <Card className="bg-white border-slate-100 p-5 space-y-4">
-            <div>
-              <h3 className="text-lg font-bold text-slate-800">Add Notes or Record Voice</h3>
-              <p className="text-xs text-slate-400 mt-0.5">Describe how you feel in detail. Elderly patients can speak by tapping below.</p>
             </div>
-            
-            {/* Mounted Speech assistant */}
-            <VoiceRecorder 
-              token="" 
-              onTranscriptionResult={handleVoiceTranscription} 
+
+            <VoiceRecorder token="" onTranscriptionResult={handleVoiceTranscription} />
+
+            <textarea
+              rows={4}
+              className="w-full rounded-2xl border-2 border-slate-200 bg-slate-50/60 p-4 text-sm text-slate-800 placeholder:text-slate-400 focus:border-sky-400 focus:outline-none focus:bg-white resize-y transition-all"
+              placeholder="Type additional details or use voice above..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
             />
+          </motion.div>
 
-            <div>
-              <textarea
-                rows={4}
-                className="w-full rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-800 placeholder:text-slate-400 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 resize-y"
-                placeholder="Type additional details or transcribe above..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-              />
-            </div>
-          </Card>
-
-          {/* Submit Button */}
-          <div className="flex items-center justify-end pt-2">
-            <Button
+          {/* Submit */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="pb-4"
+          >
+            <motion.button
               type="submit"
-              variant="teal"
-              className="px-8 py-6 rounded-2xl w-full sm:w-auto text-base flex items-center justify-center gap-1.5"
               disabled={loading}
+              whileHover={!loading ? { scale: 1.02, boxShadow: "0 20px 48px rgba(2,132,199,0.28)" } : {}}
+              whileTap={!loading ? { scale: 0.98 } : {}}
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-sky-600 to-cyan-600 text-white text-base font-extrabold shadow-lg shadow-sky-500/25 flex items-center justify-center gap-2.5 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
                   <Loader2 className="h-5 w-5 animate-spin" />
                   <span>AI Compiling Timeline...</span>
+                  <Brain className="h-5 w-5 animate-pulse" />
                 </>
               ) : (
                 <>
@@ -269,12 +354,11 @@ function SymptomLogContent() {
                   <span>Submit Symptom Log</span>
                 </>
               )}
-            </Button>
-          </div>
-
+            </motion.button>
+          </motion.div>
         </form>
       </main>
-    </div>
+    </motion.div>
   )
 }
 
@@ -282,7 +366,12 @@ export default function SymptomLog() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Activity className="h-8 w-8 text-sky-600 animate-pulse" />
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-sky-500 to-cyan-500 flex items-center justify-center shadow-lg animate-pulse">
+            <Activity className="h-5 w-5 text-white" />
+          </div>
+          <p className="text-slate-500 font-semibold text-sm">Loading...</p>
+        </div>
       </div>
     }>
       <SymptomLogContent />
