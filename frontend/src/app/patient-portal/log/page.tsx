@@ -1,11 +1,14 @@
-"use client"
+﻿"use client"
 
-import React, { useState, useEffect, Suspense } from "react"
+import React, { useCallback, useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { ArrowLeft, Check, Mic, Loader2, Sparkles, AlertCircle, Activity } from "lucide-react"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { ArrowLeft, Check, Loader2, Sparkles, AlertCircle, Activity } from "lucide-react"
+import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { VoiceRecorder } from "@/components/VoiceRecorder"
+
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : "Something went wrong"
 
 function SymptomLogContent() {
   const router = useRouter()
@@ -16,10 +19,14 @@ function SymptomLogContent() {
   const dictationText = searchParams.get("dictation") || ""
 
   // Form States
-  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([])
-  const [severities, setSeverities] = useState<Record<string, string>>({})
-  const [notes, setNotes] = useState("")
-  const [logDate, setLogDate] = useState("")
+  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>(() =>
+    preSelectedSymptom ? [preSelectedSymptom] : []
+  )
+  const [severities, setSeverities] = useState<Record<string, string>>(() =>
+    preSelectedSymptom ? { [preSelectedSymptom]: "Medium" } : {}
+  )
+  const [notes, setNotes] = useState(dictationText)
+  const [logDate, setLogDate] = useState(() => new Date().toISOString().split("T")[0])
   
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -33,27 +40,15 @@ function SymptomLogContent() {
     { label: "Joint Pain", emoji: "🦵" }
   ]
 
-  useEffect(() => {
-    // Set default date to today in YYYY-MM-DD
-    const today = new Date().toISOString().split("T")[0]
-    setLogDate(today)
-
-    // Pre-populate if query parameter exists
-    if (preSelectedSymptom) {
-      toggleSymptom(preSelectedSymptom)
-    }
-    if (dictationText) {
-      setNotes(dictationText)
-    }
-  }, [preSelectedSymptom, dictationText])
-
-  const toggleSymptom = (label: string) => {
+  const toggleSymptom = useCallback((label: string) => {
     setSelectedSymptoms(prev => {
       if (prev.includes(label)) {
         // Remove symptom and its severity
-        const updatedSevs = { ...severities }
-        delete updatedSevs[label]
-        setSeverities(updatedSevs)
+        setSeverities(prevSevs => {
+          const updatedSevs = { ...prevSevs }
+          delete updatedSevs[label]
+          return updatedSevs
+        })
         return prev.filter(s => s !== label)
       } else {
         // Add symptom and default severity to Medium
@@ -61,7 +56,7 @@ function SymptomLogContent() {
         return [...prev, label]
       }
     })
-  }
+  }, [])
 
   const handleSeverityChange = (symptomLabel: string, severityLevel: string) => {
     setSeverities(prev => ({
@@ -106,8 +101,8 @@ function SymptomLogContent() {
       if (!compileRes.ok) throw new Error("Failed to compile timeline diagnostics")
 
       router.push("/patient-portal")
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(getErrorMessage(err))
       setLoading(false)
     }
   }

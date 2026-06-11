@@ -1,7 +1,9 @@
 import os
 import shutil
 import json
+from contextlib import asynccontextmanager
 from typing import List
+import httpx
 from fastapi import FastAPI, Depends, HTTPException, status, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
@@ -16,28 +18,15 @@ from . import models, schemas, auth, ai, pdf, transcribe
 # Initialize database tables
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="CareChrono API", version="1.0.0")
 
-# Setup CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # For local prototype development
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Startup Seeding
-@app.on_event("startup")
-def seed_database():
+def _seed_database():
+    """Seeds the database with demo doctor, patients and symptom logs on first startup."""
     db = next(get_db())
     try:
-        # Check if doctor already exists
         demo_email = "doctor@carechrono.com"
         doctor = db.query(models.Doctor).filter(models.Doctor.email == demo_email).first()
         if not doctor:
             print("Seeding database with demo doctor, patient records, and symptom logs...")
-            # Create doctor
             hashed_pwd = auth.get_password_hash("password123")
             doctor = models.Doctor(
                 email=demo_email,
@@ -49,7 +38,7 @@ def seed_database():
             db.commit()
             db.refresh(doctor)
 
-            # Create Patient 1: John Doe (Acute respiratory escalation)
+            # Patient 1: John Doe
             john = models.Patient(
                 name="John Doe",
                 date_of_birth=datetime.date(1981, 4, 15),
@@ -63,71 +52,51 @@ def seed_database():
             db.commit()
             db.refresh(john)
 
-            # Add John's Symptom Logs
             logs_john = [
-                models.SymptomLog(
-                    patient_id=john.id,
-                    date=datetime.date(2026, 6, 5),
+                models.SymptomLog(patient_id=john.id, date=datetime.date(2026, 6, 5),
                     symptoms_json=json.dumps(["Fever"]),
                     severities_json=json.dumps({"Fever": "Low"}),
-                    notes="Started feeling slightly hot today and fatigued."
-                ),
-                models.SymptomLog(
-                    patient_id=john.id,
-                    date=datetime.date(2026, 6, 6),
+                    notes="Started feeling slightly hot today and fatigued."),
+                models.SymptomLog(patient_id=john.id, date=datetime.date(2026, 6, 6),
                     symptoms_json=json.dumps(["Fever", "Cough"]),
                     severities_json=json.dumps({"Fever": "Medium", "Cough": "Low"}),
-                    notes="Woke up with a dry cough. Fever feels higher."
-                ),
-                models.SymptomLog(
-                    patient_id=john.id,
-                    date=datetime.date(2026, 6, 7),
+                    notes="Woke up with a dry cough. Fever feels higher."),
+                models.SymptomLog(patient_id=john.id, date=datetime.date(2026, 6, 7),
                     symptoms_json=json.dumps(["Fever", "Cough", "Fatigue"]),
                     severities_json=json.dumps({"Fever": "High", "Cough": "Medium", "Fatigue": "High"}),
-                    notes="Very weak. Coughing a lot. Fever persists."
-                ),
-                models.SymptomLog(
-                    patient_id=john.id,
-                    date=datetime.date(2026, 6, 8),
+                    notes="Very weak. Coughing a lot. Fever persists."),
+                models.SymptomLog(patient_id=john.id, date=datetime.date(2026, 6, 8),
                     symptoms_json=json.dumps(["Fever", "Cough", "Fatigue", "Breathlessness"]),
                     severities_json=json.dumps({"Fever": "High", "Cough": "High", "Fatigue": "High", "Breathlessness": "High"}),
-                    notes="Finding it hard to breathe when moving around. Worried."
-                )
+                    notes="Finding it hard to breathe when moving around. Worried."),
             ]
             for log in logs_john:
                 db.add(log)
             db.commit()
 
-            # Compile John's Timeline via Analyzer
             john_logs_list = db.query(models.SymptomLog).filter(models.SymptomLog.patient_id == john.id).all()
             analysis_john = ai.rule_based_fallback_analyzer(
                 [{"date": l.date, "symptoms_json": l.symptoms_json, "severities_json": l.severities_json, "notes": l.notes} for l in john_logs_list],
                 john.name
             )
-            
             john.summary = analysis_john["summary"]
             john.risk_score = analysis_john["risk_score"]
             john.progression_trend = analysis_john["progression_trend"]
             db.add(john)
             db.commit()
 
-            # Create John's Timeline Events
             for ev in analysis_john["events"]:
                 log_ref = next((l for l in john_logs_list if l.date.strftime("%Y-%m-%d") == ev["date"]), None)
-                db_event = models.TimelineEvent(
+                db.add(models.TimelineEvent(
                     patient_id=john.id,
                     symptom_log_id=log_ref.id if log_ref else None,
                     date=datetime.datetime.strptime(ev["date"], "%Y-%m-%d").date(),
-                    event_type=ev["event_type"],
-                    title=ev["title"],
-                    description=ev["description"],
-                    severity=ev["severity"]
-                )
-                db.add(db_event)
+                    event_type=ev["event_type"], title=ev["title"],
+                    description=ev["description"], severity=ev["severity"]
+                ))
             db.commit()
 
-
-            # Create Patient 2: Mary Watson (Elderly Joint Pain, Improving)
+            # Patient 2: Mary Watson
             mary = models.Patient(
                 name="Mary Watson",
                 date_of_birth=datetime.date(1948, 11, 22),
@@ -141,67 +110,71 @@ def seed_database():
             db.commit()
             db.refresh(mary)
 
-            # Add Mary's Symptom Logs
             logs_mary = [
-                models.SymptomLog(
-                    patient_id=mary.id,
-                    date=datetime.date(2026, 6, 6),
+                models.SymptomLog(patient_id=mary.id, date=datetime.date(2026, 6, 6),
                     symptoms_json=json.dumps(["Joint Pain"]),
                     severities_json=json.dumps({"Joint Pain": "Medium"}),
-                    notes="Right knee and fingers aching. Hard to open jars."
-                ),
-                models.SymptomLog(
-                    patient_id=mary.id,
-                    date=datetime.date(2026, 6, 7),
+                    notes="Right knee and fingers aching. Hard to open jars."),
+                models.SymptomLog(patient_id=mary.id, date=datetime.date(2026, 6, 7),
                     symptoms_json=json.dumps(["Joint Pain", "Fatigue"]),
                     severities_json=json.dumps({"Joint Pain": "High", "Fatigue": "Low"}),
-                    notes="Very painful joints today, stayed in bed most of the morning."
-                ),
-                models.SymptomLog(
-                    patient_id=mary.id,
-                    date=datetime.date(2026, 6, 8),
+                    notes="Very painful joints today, stayed in bed most of the morning."),
+                models.SymptomLog(patient_id=mary.id, date=datetime.date(2026, 6, 8),
                     symptoms_json=json.dumps(["Joint Pain"]),
                     severities_json=json.dumps({"Joint Pain": "Low"}),
-                    notes="Knee pain improved after resting. Feeling much better today."
-                )
+                    notes="Knee pain improved after resting. Feeling much better today."),
             ]
             for log in logs_mary:
                 db.add(log)
             db.commit()
 
-            # Compile Mary's Timeline via Analyzer
             mary_logs_list = db.query(models.SymptomLog).filter(models.SymptomLog.patient_id == mary.id).all()
             analysis_mary = ai.rule_based_fallback_analyzer(
                 [{"date": l.date, "symptoms_json": l.symptoms_json, "severities_json": l.severities_json, "notes": l.notes} for l in mary_logs_list],
                 mary.name
             )
-            
             mary.summary = analysis_mary["summary"]
             mary.risk_score = analysis_mary["risk_score"]
             mary.progression_trend = analysis_mary["progression_trend"]
             db.add(mary)
             db.commit()
 
-            # Create Mary's Timeline Events
             for ev in analysis_mary["events"]:
                 log_ref = next((l for l in mary_logs_list if l.date.strftime("%Y-%m-%d") == ev["date"]), None)
-                db_event = models.TimelineEvent(
+                db.add(models.TimelineEvent(
                     patient_id=mary.id,
                     symptom_log_id=log_ref.id if log_ref else None,
                     date=datetime.datetime.strptime(ev["date"], "%Y-%m-%d").date(),
-                    event_type=ev["event_type"],
-                    title=ev["title"],
-                    description=ev["description"],
-                    severity=ev["severity"]
-                )
-                db.add(db_event)
+                    event_type=ev["event_type"], title=ev["title"],
+                    description=ev["description"], severity=ev["severity"]
+                ))
             db.commit()
-
             print("Database successfully seeded.")
     except Exception as e:
         print(f"Error seeding database: {str(e)}")
     finally:
         db.close()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """FastAPI lifespan handler — runs startup logic before yield and cleanup after."""
+    _seed_database()
+    yield
+
+
+app = FastAPI(title="CareChrono API", version="1.0.0", lifespan=lifespan)
+
+# Setup CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # For local prototype development
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 
 
 # --- AUTH ENDPOINTS ---
@@ -254,7 +227,7 @@ def create_patient(patient: schemas.PatientCreate, db: Session = Depends(get_db)
     if db_patient:
         raise HTTPException(status_code=400, detail="Medical Record Number already exists")
     
-    db_patient = models.Patient(**patient.dict())
+    db_patient = models.Patient(**patient.model_dump())
     db.add(db_patient)
     db.commit()
     db.refresh(db_patient)
@@ -476,3 +449,54 @@ async def transcribe_audio(
             os.remove(file_path)
             
     return {"transcript": text}
+
+# --- GEMINI CHATBOT ENDPOINT ---
+
+_CHAT_FALLBACK_RESPONSES = {
+    "fever": "Fever can have many causes including infections. If fever exceeds 38.5°C (101.3°F), persists more than 3 days, or is accompanied by breathlessness, seek medical attention promptly.",
+    "cough": "A persistent cough lasting more than 3 weeks, or one that produces blood-tinged mucus, warrants a medical evaluation.",
+    "pain": "Pain that is severe, sudden, or accompanied by other symptoms like fever or difficulty breathing should be evaluated by a healthcare professional.",
+    "default": "I'm your CareChrono health assistant. I can help you understand symptom patterns, medication reminders, and when to seek care. Please consult a healthcare professional for personalized medical advice."
+}
+
+def _local_chat_fallback(message: str) -> str:
+    msg_lower = message.lower()
+    for keyword, response in _CHAT_FALLBACK_RESPONSES.items():
+        if keyword in msg_lower:
+            return response
+    return _CHAT_FALLBACK_RESPONSES["default"]
+
+
+@app.post("/api/chat", response_model=schemas.ChatResponse)
+async def chat_with_ai(chat: schemas.ChatRequest):
+    """Chat endpoint. Uses Gemini if API key is configured, falls back to local responses."""
+    if settings.GEMINI_API_KEY:
+        try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={settings.GEMINI_API_KEY}"
+            payload = {
+                "contents": [{
+                    "parts": [{
+                        "text": (
+                            "You are CareChrono AI, a compassionate healthcare assistant. "
+                            "Answer briefly and clearly in 2-3 sentences. "
+                            f"Question: {chat.message}"
+                        )
+                    }]
+                }]
+            }
+            async with httpx.AsyncClient(timeout=20.0) as client:
+                response = await client.post(url, json=payload)
+
+            if response.status_code == 200:
+                data = response.json()
+                answer = data["candidates"][0]["content"]["parts"][0]["text"]
+                return {"response": answer}
+
+            # Gemini returned non-200 (quota, bad key etc.) — use fallback
+            return {"response": _local_chat_fallback(chat.message)}
+
+        except Exception:
+            return {"response": _local_chat_fallback(chat.message)}
+
+    # No valid Gemini key configured — use built-in local fallback
+    return {"response": _local_chat_fallback(chat.message)}

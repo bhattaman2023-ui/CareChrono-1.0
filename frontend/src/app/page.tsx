@@ -3,8 +3,9 @@
 import React from "react"
 import { useRouter } from "next/navigation"
 import { Activity, ArrowRight, Mic, Cpu, ShieldCheck, Heart, User, Clipboard } from "lucide-react"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import ChatBot from "@/components/chatbot"
 
 export default function Home() {
   const router = useRouter()
@@ -133,7 +134,7 @@ export default function Home() {
           </div>
         </div>
       </footer>
-
+      <ChatBot />
     </main>
   )
 }

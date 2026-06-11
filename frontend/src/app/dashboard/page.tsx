@@ -1,16 +1,14 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useCallback, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { 
   Search, 
   Plus, 
   Users, 
   Clock, 
-  HeartPulse, 
   LogOut, 
   User, 
-  FileText, 
   TrendingUp, 
   Activity,
   UserCheck,
@@ -41,6 +39,9 @@ interface Patient {
   created_at: string
 }
 
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : "Something went wrong"
+
 export default function Dashboard() {
   const router = useRouter()
   const [patients, setPatients] = useState<Patient[]>([])
@@ -56,22 +57,14 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [submitLoading, setSubmitLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [token, setToken] = useState<string>("")
-  const [doctorEmail, setDoctorEmail] = useState("")
+  const [token] = useState<string>(() =>
+    typeof window === "undefined" ? "" : localStorage.getItem("token") || ""
+  )
+  const [doctorEmail] = useState(() =>
+    typeof window === "undefined" ? "" : localStorage.getItem("doctor_email") || "doctor@carechrono.com"
+  )
 
-  useEffect(() => {
-    const localToken = localStorage.getItem("token")
-    const email = localStorage.getItem("doctor_email")
-    if (!localToken) {
-      router.push("/")
-      return
-    }
-    setToken(localToken)
-    setDoctorEmail(email || "doctor@carechrono.com")
-    fetchPatients(localToken)
-  }, [router])
-
-  const fetchPatients = async (authToken: string) => {
+  const fetchPatients = useCallback(async (authToken: string) => {
     try {
       const response = await fetch("http://localhost:8000/api/patients", {
         headers: {
@@ -80,19 +73,33 @@ export default function Dashboard() {
       })
       if (!response.ok) {
         if (response.status === 401) {
-          handleLogout()
+          localStorage.removeItem("token")
+          localStorage.removeItem("doctor_email")
+          router.push("/")
           return
         }
         throw new Error("Failed to fetch patients")
       }
       const data = await response.json()
       setPatients(data)
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(getErrorMessage(err))
     } finally {
       setLoading(false)
     }
-  }
+  }, [router])
+
+  useEffect(() => {
+    const localToken = token || localStorage.getItem("token")
+    if (!localToken) {
+      router.push("/")
+      return
+    }
+    const timer = window.setTimeout(() => {
+      void fetchPatients(localToken)
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [fetchPatients, router, token])
 
   const handleLogout = () => {
     localStorage.removeItem("token")
@@ -135,8 +142,8 @@ export default function Dashboard() {
       setNewGender("Male")
       setNewMrn("")
       setIsNewPatientOpen(false)
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(getErrorMessage(err))
     } finally {
       setSubmitLoading(false)
     }
@@ -265,7 +272,7 @@ export default function Dashboard() {
               </div>
             ) : filteredPatients.length === 0 ? (
               <div className="py-12 text-center text-slate-400 text-sm rounded-xl border border-dashed border-slate-800 bg-slate-900/10">
-                No patients found. Click "New Patient" to register one.
+                No patients found. Click &quot;New Patient&quot; to register one.
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -304,7 +311,7 @@ export default function Dashboard() {
                         {/* Summary preview */}
                         {patient.summary && (
                           <p className="text-xs text-slate-400 leading-relaxed line-clamp-2 italic pt-1">
-                            "{patient.summary}"
+                            &quot;{patient.summary}&quot;
                           </p>
                         )}
                       </div>

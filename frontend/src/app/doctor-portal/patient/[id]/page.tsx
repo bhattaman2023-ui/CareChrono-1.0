@@ -1,25 +1,21 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useCallback, useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { 
   ArrowLeft, 
   Download, 
   Sparkles, 
-  ShieldAlert, 
-  Heart, 
-  Activity, 
   Calendar, 
   User, 
   TrendingUp, 
-  Plus, 
   FileText, 
   ChevronDown, 
   ChevronRight,
   ClipboardCheck,
   Loader2
 } from "lucide-react"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Timeline, TimelineEvent } from "@/components/Timeline"
 import { 
@@ -59,6 +55,16 @@ interface Note {
   content: string
 }
 
+type SeverityChartDatum = {
+  day: string
+  date: string
+  severity: number
+  symptom: string
+}
+
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : "Something went wrong"
+
 export default function DoctorPatientReview() {
   const params = useParams()
   const router = useRouter()
@@ -78,11 +84,7 @@ export default function DoctorPatientReview() {
   const [error, setError] = useState<string | null>(null)
   const [expandedNotes, setExpandedNotes] = useState<Record<number, boolean>>({})
 
-  useEffect(() => {
-    fetchPatientData()
-  }, [patientId])
-
-  const fetchPatientData = async () => {
+  const fetchPatientData = useCallback(async () => {
     try {
       const response = await fetch(`http://localhost:8000/api/patients/${patientId}`)
       if (!response.ok) throw new Error("Failed to fetch patient details")
@@ -90,10 +92,14 @@ export default function DoctorPatientReview() {
       
       setPatient(data)
       if (data.symptom_logs) {
-        setSymptomLogs(data.symptom_logs.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime()))
+        setSymptomLogs(
+          [...data.symptom_logs].sort((a: SymptomLog, b: SymptomLog) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        )
       }
       if (data.notes) {
-        setNotes(data.notes.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()))
+        setNotes(
+          [...data.notes].sort((a: Note, b: Note) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        )
       }
 
       // Fetch timeline
@@ -102,12 +108,19 @@ export default function DoctorPatientReview() {
       const eventsData = await timelineRes.json()
       setTimelineEvents(eventsData)
 
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(getErrorMessage(err))
     } finally {
       setLoading(false)
     }
-  }
+  }, [patientId])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void fetchPatientData()
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [fetchPatientData])
 
   const handleAddDoctorNote = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -169,8 +182,8 @@ export default function DoctorPatientReview() {
 
       setNoteContent("")
       await fetchPatientData()
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(getErrorMessage(err))
     } finally {
       setNoteSubmitLoading(false)
     }
@@ -190,8 +203,8 @@ export default function DoctorPatientReview() {
       a.click()
       document.body.removeChild(a)
       window.URL.revokeObjectURL(url)
-    } catch (err: any) {
-      alert("Error generating PDF: " + err.message)
+    } catch (err: unknown) {
+      alert("Error generating PDF: " + getErrorMessage(err))
     }
   }
 
@@ -214,7 +227,9 @@ export default function DoctorPatientReview() {
     let severities: Record<string, string> = {}
     try {
       severities = JSON.parse(log.severities_json)
-    } catch (e) {}
+    } catch {
+      severities = {}
+    }
     
     // Find peak severity value for this day
     let peakValue = 0
@@ -361,7 +376,7 @@ export default function DoctorPatientReview() {
               </div>
               
               <div className="text-sm text-slate-600 leading-relaxed font-semibold bg-slate-50/80 border border-slate-100 rounded-2xl p-4">
-                "{patient.summary || "No active summary."}"
+                &quot;{patient.summary || "No active summary."}&quot;
               </div>
             </div>
           </Card>
@@ -464,9 +479,11 @@ export default function DoctorPatientReview() {
                     />
                     <Tooltip 
                       contentStyle={{ backgroundColor: "#ffffff", borderColor: "#f1f5f9", borderRadius: "12px", color: "#1f2937", fontSize: "12px" }}
-                      formatter={(value: any, name: any, props: any) => {
-                        const score = value === 3 ? "Severe" : value === 2 ? "Moderate" : "Mild"
-                        return [score, `Peak: ${props.payload.symptom}`]
+                      formatter={(value, _name, props) => {
+                        const numericValue = Number(value ?? 0)
+                        const payload = props.payload as SeverityChartDatum | undefined
+                        const score = numericValue === 3 ? "Severe" : numericValue === 2 ? "Moderate" : "Mild"
+                        return [score, `Peak: ${payload?.symptom || "None"}`]
                       }}
                     />
                     <Line 

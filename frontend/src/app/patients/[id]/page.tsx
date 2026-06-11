@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useCallback, useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { 
   ArrowLeft, 
@@ -40,6 +40,9 @@ interface Note {
   created_at: string
 }
 
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : "Something went wrong"
+
 export default function PatientDetail() {
   const params = useParams()
   const router = useRouter()
@@ -56,22 +59,14 @@ export default function PatientDetail() {
   const [loading, setLoading] = useState(true)
   const [noteSubmitLoading, setNoteSubmitLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [token, setToken] = useState("")
+  const [token] = useState(() =>
+    typeof window === "undefined" ? "" : localStorage.getItem("token") || ""
+  )
   
   // Toggle states for viewing notes
   const [expandedNotes, setExpandedNotes] = useState<Record<number, boolean>>({})
 
-  useEffect(() => {
-    const localToken = localStorage.getItem("token")
-    if (!localToken) {
-      router.push("/")
-      return
-    }
-    setToken(localToken)
-    fetchPatientData(localToken)
-  }, [patientId, router])
-
-  const fetchPatientData = async (authToken: string) => {
+  const fetchPatientData = useCallback(async (authToken: string) => {
     try {
       // 1. Fetch Patient details (includes notes in nested structure)
       const patientRes = await fetch(`http://localhost:8000/api/patients/${patientId}`, {
@@ -82,7 +77,9 @@ export default function PatientDetail() {
       
       setPatient(patientData)
       if (patientData.notes) {
-        setNotes(patientData.notes.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()))
+        setNotes(
+          [...patientData.notes].sort((a: Note, b: Note) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        )
       }
 
       // 2. Fetch Patient timeline events
@@ -93,12 +90,24 @@ export default function PatientDetail() {
       const eventsData = await timelineRes.json()
       setTimelineEvents(eventsData)
 
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(getErrorMessage(err))
     } finally {
       setLoading(false)
     }
-  }
+  }, [patientId])
+
+  useEffect(() => {
+    const localToken = token || localStorage.getItem("token")
+    if (!localToken) {
+      router.push("/")
+      return
+    }
+    const timer = window.setTimeout(() => {
+      void fetchPatientData(localToken)
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [fetchPatientData, router, token])
 
   const handleTranscribeResult = (text: string) => {
     setNoteContent(prev => prev ? `${prev} ${text}` : text)
@@ -130,8 +139,8 @@ export default function PatientDetail() {
       // Note saved successfully. Trigger refetch to update timeline events and patient summaries.
       setNoteContent("")
       await fetchPatientData(token)
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(getErrorMessage(err))
     } finally {
       setNoteSubmitLoading(false)
     }
@@ -153,8 +162,8 @@ export default function PatientDetail() {
       a.click()
       document.body.removeChild(a)
       window.URL.revokeObjectURL(url)
-    } catch (err: any) {
-      alert("Error generating PDF: " + err.message)
+    } catch (err: unknown) {
+      alert("Error generating PDF: " + getErrorMessage(err))
     }
   }
 
@@ -222,6 +231,11 @@ export default function PatientDetail() {
         
         {/* Left Side: Note Recorder & Metadata (5/12 cols) */}
         <div className="lg:col-span-5 space-y-6">
+          {error && (
+            <div className="rounded-lg border border-red-900/30 bg-red-950/40 p-3 text-xs text-red-400">
+              {error}
+            </div>
+          )}
           
           {/* Patient Card */}
           <Card className="bg-slate-900/40 border-slate-800">

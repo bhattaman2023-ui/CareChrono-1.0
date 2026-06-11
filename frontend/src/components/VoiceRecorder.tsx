@@ -6,26 +6,72 @@ interface VoiceRecorderProps {
   token: string
 }
 
+type SpeechRecognitionResultItem = {
+  transcript: string
+}
+
+type SpeechRecognitionAlternativeList = {
+  isFinal: boolean
+  0: SpeechRecognitionResultItem
+}
+
+type SpeechRecognitionResultList = {
+  length: number
+  [index: number]: SpeechRecognitionAlternativeList
+}
+
+type SpeechRecognitionEventLike = {
+  resultIndex: number
+  results: SpeechRecognitionResultList
+}
+
+type SpeechRecognitionErrorEventLike = {
+  error: string
+}
+
+type SpeechRecognitionInstance = {
+  continuous: boolean
+  interimResults: boolean
+  lang: string
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null
+  onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null
+  onend: (() => void) | null
+  start: () => void
+  stop: () => void
+}
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance
+
+type SpeechRecognitionWindow = Window & {
+  SpeechRecognition?: SpeechRecognitionConstructor
+  webkitSpeechRecognition?: SpeechRecognitionConstructor
+}
+
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : "Something went wrong"
+
 export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscriptionResult, token }) => {
   const [isRecording, setIsRecording] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const [interimText, setInterimText] = useState("")
   const [error, setError] = useState<string | null>(null)
   
-  const recognitionRef = useRef<any>(null)
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
 
   useEffect(() => {
     // Check for browser Web Speech API
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    const SpeechRecognition =
+      (window as SpeechRecognitionWindow).SpeechRecognition ||
+      (window as SpeechRecognitionWindow).webkitSpeechRecognition
     if (SpeechRecognition) {
       const rec = new SpeechRecognition()
       rec.continuous = true
       rec.interimResults = true
       rec.lang = "en-US"
 
-      rec.onresult = (event: any) => {
+      rec.onresult = (event) => {
         let finalTranscript = ""
         let interimTranscript = ""
 
@@ -43,7 +89,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscriptionRes
         setInterimText(interimTranscript)
       }
 
-      rec.onerror = (event: any) => {
+      rec.onerror = (event) => {
         // Next.js dev server intercepts console.error and displays a full-screen overlay.
         // We log Web Speech errors as warnings/info so they don't crash the development UX,
         // while displaying user-friendly messages in the component UI.
@@ -159,8 +205,8 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscriptionRes
       if (data.transcript) {
         onTranscriptionResult(data.transcript)
       }
-    } catch (err: any) {
-      setError("Transcription failed: " + err.message)
+    } catch (err: unknown) {
+      setError("Transcription failed: " + getErrorMessage(err))
     } finally {
       setIsProcessing(false)
     }
@@ -205,7 +251,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscriptionRes
 
       {interimText && (
         <div className="text-xs text-slate-600 italic bg-sky-50/60 p-2.5 rounded-xl border border-sky-100/50">
-          "{interimText}"
+          &quot;{interimText}&quot;
         </div>
       )}
 

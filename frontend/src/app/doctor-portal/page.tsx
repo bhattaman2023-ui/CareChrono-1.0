@@ -1,10 +1,9 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useCallback, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Search, LogOut, User, Activity, ShieldAlert, CheckCircle, HelpCircle, ArrowRight, ClipboardList } from "lucide-react"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Search, LogOut, User, Activity, ShieldAlert, CheckCircle, ArrowRight, ClipboardList } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 
 interface Patient {
@@ -19,6 +18,9 @@ interface Patient {
   created_at: string
 }
 
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : "Something went wrong"
+
 export default function DoctorPortal() {
   const router = useRouter()
   const [patients, setPatients] = useState<Patient[]>([])
@@ -26,22 +28,25 @@ export default function DoctorPortal() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   
-  useEffect(() => {
-    fetchPatients()
-  }, [])
-
-  const fetchPatients = async () => {
+  const fetchPatients = useCallback(async () => {
     try {
       const response = await fetch("http://localhost:8000/api/patients")
       if (!response.ok) throw new Error("Failed to fetch patients")
       const data = await response.json()
       setPatients(data)
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(getErrorMessage(err))
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void fetchPatients()
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [fetchPatients])
 
   const handleLogout = () => {
     // Return back to main entry landing page
@@ -116,6 +121,12 @@ export default function DoctorPortal() {
           <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Clinical Diagnostic Review</h2>
           <p className="text-sm text-slate-500 font-medium">Verify patient symptom progression timelines before consultation.</p>
         </div>
+
+        {error && (
+          <div className="rounded-xl border border-red-100 bg-red-50 p-3 text-sm font-semibold text-red-600">
+            {error}
+          </div>
+        )}
 
         {/* Clinical Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -221,7 +232,7 @@ export default function DoctorPortal() {
                       {/* Clinical preview */}
                       {patient.summary && (
                         <p className="text-xs text-slate-500 leading-relaxed font-medium line-clamp-2 italic border-l-2 border-slate-200 pl-2">
-                          "{patient.summary}"
+                          &quot;{patient.summary}&quot;
                         </p>
                       )}
                     </div>

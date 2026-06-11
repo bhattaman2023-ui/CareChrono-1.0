@@ -15,7 +15,7 @@ import {
 export interface TimelineEvent {
   id: number
   patient_id: number
-  source_note_id: number | null
+  symptom_log_id: number | null
   date: string
   event_type: string // "Diagnosis" | "Medication" | "Procedure" | "Lab" | "Visit"
   title: string
@@ -226,9 +226,13 @@ export const Timeline: React.FC<TimelineProps> = ({ events, onSelectNote }) => {
                         >
                           <p className="leading-relaxed">{event.description}</p>
                           
-                          {event.source_note_id && onSelectNote && (
+                          {event.symptom_log_id && onSelectNote && (
                             <button
-                              onClick={() => onSelectNote(event.source_note_id!)}
+                              onClick={() => {
+                                if (event.symptom_log_id) {
+                                  onSelectNote(event.symptom_log_id)
+                                }
+                              }}
                               className="mt-3 flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
                             >
                               <FileText className="h-3.5 w-3.5" />

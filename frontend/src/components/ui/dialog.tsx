@@ -10,10 +10,7 @@ interface DialogProps {
 }
 
 export const Dialog: React.FC<DialogProps> = ({ isOpen, onClose, title, children }) => {
-  const [mounted, setMounted] = React.useState(false)
-
   React.useEffect(() => {
-    setMounted(true)
     if (isOpen) {
       document.body.style.overflow = "hidden"
     }
@@ -22,7 +19,7 @@ export const Dialog: React.FC<DialogProps> = ({ isOpen, onClose, title, children
     }
   }, [isOpen])
 
-  if (!isOpen || !mounted) return null
+  if (!isOpen || typeof document === "undefined") return null
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

@@ -130,3 +130,9 @@ class AIAnalysisResult(BaseModel):
     summary: str
     risk_score: str  # "Low", "Medium", "High"
     progression_trend: str  # "Improving", "Stable", "Worsening"
+# --- ChatBot Schemas ---
+class ChatRequest(BaseModel):
+    message: str
+
+class ChatResponse(BaseModel):
+    response: str

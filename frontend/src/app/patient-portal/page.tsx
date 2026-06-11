@@ -1,10 +1,9 @@
-"use client"
+﻿"use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useCallback, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Mic, ArrowRight, Activity, Calendar, Heart, ShieldAlert, Sparkles } from "lucide-react"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Mic, Activity, Calendar, ShieldAlert, Sparkles } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
 import { VoiceRecorder } from "@/components/VoiceRecorder"
 
 interface Patient {
@@ -25,6 +24,9 @@ interface SymptomLog {
   severities_json: string
   notes: string | null
 }
+
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : "Something went wrong"
 
 export default function PatientPortal() {
   const router = useRouter()
@@ -50,31 +52,7 @@ export default function PatientPortal() {
     { label: "Joint Pain", emoji: "🦵" }
   ]
 
-  useEffect(() => {
-    fetchPatients()
-  }, [])
-
-  const fetchPatients = async () => {
-    try {
-      const response = await fetch("http://localhost:8000/api/patients")
-      if (!response.ok) throw new Error("Failed to fetch patient records")
-      const data = await response.json()
-      setPatients(data)
-      
-      // Default to the first patient (John Doe)
-      if (data.length > 0) {
-        setSelectedPatientId(data[0].id)
-        fetchPatientDetails(data[0].id)
-      } else {
-        setLoading(false)
-      }
-    } catch (err: any) {
-      setError(err.message)
-      setLoading(false)
-    }
-  }
-
-  const fetchPatientDetails = async (id: number) => {
+  const fetchPatientDetails = useCallback(async (id: number) => {
     setLoading(true)
     try {
       const response = await fetch(`http://localhost:8000/api/patients/${id}`)
@@ -85,19 +63,46 @@ export default function PatientPortal() {
       if (data.symptom_logs) {
         // Sort logs descending (newest first)
         setSymptomLogs(
-          data.symptom_logs.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+          [...data.symptom_logs].sort((a: SymptomLog, b: SymptomLog) => new Date(b.date).getTime() - new Date(a.date).getTime())
         )
       }
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(getErrorMessage(err))
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  const fetchPatients = useCallback(async () => {
+    try {
+      const response = await fetch("http://localhost:8000/api/patients")
+      if (!response.ok) throw new Error("Failed to fetch patient records")
+      const data = await response.json()
+      setPatients(data)
+      
+      // Default to the first patient (John Doe)
+      if (data.length > 0) {
+        setSelectedPatientId(data[0].id)
+        void fetchPatientDetails(data[0].id)
+      } else {
+        setLoading(false)
+      }
+    } catch (err: unknown) {
+      setError(getErrorMessage(err))
+      setLoading(false)
+    }
+  }, [fetchPatientDetails])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void fetchPatients()
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [fetchPatients])
 
   const handlePatientChange = (id: number) => {
     setSelectedPatientId(id)
-    fetchPatientDetails(id)
+    void fetchPatientDetails(id)
   }
 
   const handleSymptomClick = (symptomLabel: string) => {
@@ -157,6 +162,11 @@ export default function PatientPortal() {
       {/* Main Body */}
       {patient && (
         <main className="flex-1 max-w-3xl w-full mx-auto px-4 py-8 space-y-8">
+          {error && (
+            <div className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-semibold text-red-600">
+              {error}
+            </div>
+          )}
           
           {/* Warm Welcoming Greeting */}
           <div className="text-left space-y-2">
@@ -196,7 +206,7 @@ export default function PatientPortal() {
                 <div>
                   <h4 className="font-extrabold text-lg text-slate-800">Voice Assistant Logging</h4>
                   <p className="text-sm text-slate-500 leading-relaxed mt-0.5">
-                    Don't want to type? Tap the button below and speak naturally. For example: "I have had a mild fever and a sore throat since yesterday."
+                    Don&apos;t want to type? Tap the button below and speak naturally. For example: &quot;I have had a mild fever and a sore throat since yesterday.&quot;
                   </p>
                 </div>
               </div>
@@ -248,7 +258,10 @@ export default function PatientPortal() {
                   try {
                     parsedSymptoms = JSON.parse(log.symptoms_json)
                     parsedSeverities = JSON.parse(log.severities_json)
-                  } catch (e) {}
+                  } catch {
+                    parsedSymptoms = []
+                    parsedSeverities = {}
+                  }
 
                   return (
                     <Card key={log.id} className="bg-white border-slate-100 shadow-sm p-5 hover:shadow-md transition-shadow">
@@ -279,7 +292,7 @@ export default function PatientPortal() {
                           {/* Notes */}
                           {log.notes && (
                             <p className="text-sm text-slate-600 leading-relaxed font-medium pt-1">
-                              "{log.notes}"
+                              &quot;{log.notes}&quot;
                             </p>
                           )}
                         </div>
