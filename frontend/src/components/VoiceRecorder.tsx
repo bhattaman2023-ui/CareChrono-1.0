@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react"
 import { Mic, Square, Loader2, AlertCircle } from "lucide-react"
+import { API_BASE_URL } from "@/lib/api"
 
 interface VoiceRecorderProps {
   onTranscriptionResult: (text: string) => void
@@ -55,7 +56,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscriptionRes
   const [isProcessing, setIsProcessing] = useState(false)
   const [interimText, setInterimText] = useState("")
   const [error, setError] = useState<string | null>(null)
-  
+
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
@@ -94,7 +95,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscriptionRes
         // We log Web Speech errors as warnings/info so they don't crash the development UX,
         // while displaying user-friendly messages in the component UI.
         console.warn("Speech recognition warning:", event.error)
-        
+
         if (event.error === "not-allowed") {
           setError("Microphone permission denied. Using backend upload fallback.")
         } else if (event.error === "aborted") {
@@ -162,7 +163,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscriptionRes
       setError("Unable to access microphone. Please check permissions.")
       setIsRecording(false)
       if (recognitionRef.current) {
-        try { recognitionRef.current.stop() } catch {}
+        try { recognitionRef.current.stop() } catch { }
       }
     }
   }
@@ -171,7 +172,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscriptionRes
     if (recognitionRef.current) {
       try {
         recognitionRef.current.stop()
-      } catch {}
+      } catch { }
     }
 
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
@@ -189,7 +190,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscriptionRes
     formData.append("file", blob, "recording.wav")
 
     try {
-      const response = await fetch("http://localhost:8000/api/transcribe", {
+      const response = await fetch(`${API_BASE_URL}/api/transcribe`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`

@@ -13,6 +13,8 @@ carechrono.db
 # Node / Frontend build files
 node_modules/
 .next/
+.next-cache/
+.next-webpack/
 out/
 .env.local
 .env.development.local

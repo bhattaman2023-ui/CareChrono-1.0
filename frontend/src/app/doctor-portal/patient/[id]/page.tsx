@@ -13,11 +13,15 @@ import {
   FileText, 
   ChevronRight,
   ClipboardCheck,
-  Loader2, Brain
+  Loader2, Brain,
+  Plus, Pencil, Trash2
 } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Timeline, TimelineEvent } from "@/components/Timeline"
+import { Dialog } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Select } from "@/components/ui/select"
 import { pageFade, sectionReveal, staggerChildren, cardReveal } from "@/components/motion-presets"
 import { 
   LineChart, 
@@ -56,6 +60,15 @@ interface Note {
   content: string
 }
 
+interface Prescription {
+  id: string
+  name: string
+  dosage: string
+  frequency: string
+  duration: number
+  notes: string
+}
+
 type SeverityChartDatum = {
   day: string
   date: string
@@ -84,6 +97,33 @@ export default function DoctorPatientReview() {
   const [noteSubmitLoading, setNoteSubmitLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [expandedNotes, setExpandedNotes] = useState<Record<number, boolean>>({})
+
+  // Prescription Management states
+  const [prescriptions, setPrescriptions] = useState<Prescription[]>([
+    {
+      id: "demo-1",
+      name: "Paracetamol 500mg",
+      dosage: "500mg",
+      frequency: "Twice Daily",
+      duration: 3,
+      notes: "Take after meals"
+    },
+    {
+      id: "demo-2",
+      name: "Cough Syrup",
+      dosage: "10ml",
+      frequency: "Three Times Daily",
+      duration: 5,
+      notes: "Avoid cold water"
+    }
+  ])
+  const [isPrescDialogOpen, setIsPrescDialogOpen] = useState(false)
+  const [editingPrescription, setEditingPrescription] = useState<Prescription | null>(null)
+  const [prescName, setPrescName] = useState("")
+  const [prescDosage, setPrescDosage] = useState("")
+  const [prescFrequency, setPrescFrequency] = useState("Once Daily")
+  const [prescDuration, setPrescDuration] = useState("")
+  const [prescNotes, setPrescNotes] = useState("")
 
   const fetchPatientData = useCallback(async () => {
     try {
@@ -214,6 +254,63 @@ export default function DoctorPatientReview() {
       ...prev,
       [id]: !prev[id]
     }))
+  }
+
+  const openAddPrescription = () => {
+    setEditingPrescription(null)
+    setPrescName("")
+    setPrescDosage("")
+    setPrescFrequency("Once Daily")
+    setPrescDuration("")
+    setPrescNotes("")
+    setIsPrescDialogOpen(true)
+  }
+
+  const openEditPrescription = (presc: Prescription) => {
+    setEditingPrescription(presc)
+    setPrescName(presc.name)
+    setPrescDosage(presc.dosage)
+    setPrescFrequency(presc.frequency)
+    setPrescDuration(String(presc.duration))
+    setPrescNotes(presc.notes)
+    setIsPrescDialogOpen(true)
+  }
+
+  const handleSavePrescription = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!prescName.trim() || !prescDosage.trim() || !prescDuration.trim()) return
+
+    const durationNum = parseInt(prescDuration, 10)
+    if (isNaN(durationNum) || durationNum <= 0) return
+
+    if (editingPrescription) {
+      // Edit mode
+      setPrescriptions(prev => prev.map(p => p.id === editingPrescription.id ? {
+        ...p,
+        name: prescName,
+        dosage: prescDosage,
+        frequency: prescFrequency,
+        duration: durationNum,
+        notes: prescNotes
+      } : p))
+    } else {
+      // Add mode
+      const newPresc: Prescription = {
+        id: `presc-${Date.now()}`,
+        name: prescName,
+        dosage: prescDosage,
+        frequency: prescFrequency,
+        duration: durationNum,
+        notes: prescNotes
+      }
+      setPrescriptions(prev => [...prev, newPresc])
+    }
+
+    setIsPrescDialogOpen(false)
+  }
+
+  const handleDeletePrescription = (id: string) => {
+    setPrescriptions(prev => prev.filter(p => p.id !== id))
   }
 
   // RECHARTS DATA PREPARATION: Daily Peak Severity
@@ -451,6 +548,79 @@ export default function DoctorPatientReview() {
           </Card>
           </motion.div>
 
+          {/* Prescription Management Card */}
+          <motion.div variants={cardReveal}>
+            <Card className="bg-white border-slate-200 shadow-sm p-5 space-y-4 text-left rounded-2xl">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-1.5">
+                  <span>💊 Prescription Management</span>
+                </h3>
+                <Button
+                  onClick={openAddPrescription}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-1 text-xs"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>Add Medication</span>
+                </Button>
+              </div>
+
+              {prescriptions.length === 0 ? (
+                <p className="text-xs text-slate-400 italic py-2 text-center">No active prescriptions.</p>
+              ) : (
+                <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+                  {prescriptions.map((presc) => (
+                    <div
+                      key={presc.id}
+                      className="border border-slate-100 rounded-xl p-3.5 bg-slate-50/50 hover:bg-slate-50 transition-all flex flex-col justify-between gap-2"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="text-sm font-bold text-slate-900">{presc.name}</h4>
+                          <div className="flex flex-wrap gap-x-2.5 gap-y-1 mt-1 text-xs text-slate-500 font-medium">
+                            <span>Dosage: <strong className="text-slate-700 font-semibold">{presc.dosage}</strong></span>
+                            <span className="text-slate-300">•</span>
+                            <span>Freq: <strong className="text-slate-700 font-semibold">{presc.frequency}</strong></span>
+                            <span className="text-slate-300">•</span>
+                            <span>Duration: <strong className="text-slate-700 font-semibold">{presc.duration} days</strong></span>
+                          </div>
+                          {presc.notes && (
+                            <p className="mt-2 text-xs text-slate-600 bg-white border border-slate-100 rounded-lg p-2 leading-relaxed">
+                              {presc.notes}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 ml-2 shrink-0">
+                          <Button
+                            onClick={() => openEditPrescription(presc)}
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            onClick={() => handleDeletePrescription(presc.id)}
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="text-[11px] text-slate-400 font-medium leading-normal bg-slate-50 border border-slate-100 rounded-xl p-3">
+                Prescriptions become part of the patient&apos;s treatment timeline and AI-generated clinical summary.
+              </div>
+            </Card>
+          </motion.div>
+
           {/* Consultation Log */}
           <motion.div variants={cardReveal}>
           <Card className="bg-white border-slate-200 shadow-sm p-5 space-y-3 text-left rounded-2xl">
@@ -592,6 +762,98 @@ export default function DoctorPatientReview() {
         </motion.div>
 
       </main>
+
+      {/* Prescription Dialog Modal */}
+      <Dialog
+        isOpen={isPrescDialogOpen}
+        onClose={() => setIsPrescDialogOpen(false)}
+        title={editingPrescription ? "Edit Medication" : "Add Medication"}
+      >
+        <form onSubmit={handleSavePrescription} className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest">
+              Medicine Name
+            </label>
+            <Input
+              type="text"
+              required
+              placeholder="e.g. Paracetamol"
+              value={prescName}
+              onChange={(e) => setPrescName(e.target.value)}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest">
+                Dosage
+              </label>
+              <Input
+                type="text"
+                required
+                placeholder="e.g. 500mg or 10ml"
+                value={prescDosage}
+                onChange={(e) => setPrescDosage(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest">
+                Duration (Days)
+              </label>
+              <Input
+                type="number"
+                required
+                min="1"
+                placeholder="e.g. 5"
+                value={prescDuration}
+                onChange={(e) => setPrescDuration(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest">
+              Frequency
+            </label>
+            <Select
+              value={prescFrequency}
+              onChange={(e) => setPrescFrequency(e.target.value)}
+            >
+              <option value="Once Daily">Once Daily</option>
+              <option value="Twice Daily">Twice Daily</option>
+              <option value="Three Times Daily">Three Times Daily</option>
+              <option value="As Needed">As Needed</option>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest">
+              Notes / Instructions
+            </label>
+            <textarea
+              rows={3}
+              className="w-full rounded-lg border border-teal-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+              placeholder="e.g. Take after meals"
+              value={prescNotes}
+              onChange={(e) => setPrescNotes(e.target.value)}
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsPrescDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" variant="teal">
+              {editingPrescription ? "Save Changes" : "Add Medication"}
+            </Button>
+          </div>
+        </form>
+      </Dialog>
 
     </motion.div>
   )
