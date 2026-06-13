@@ -37,7 +37,6 @@ function AnimatedNum({ value }: { value: number }) {
   useEffect(() => {
     let n = 0
     const end = value
-    if (n === end) { setDisplay(end); return }
     const step = Math.max(1, Math.floor(end / 20))
     const timer = setInterval(() => {
       n = Math.min(n + step, end)

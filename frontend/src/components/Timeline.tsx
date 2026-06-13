@@ -4,7 +4,7 @@ import {
   HeartPulse, Pill, Activity, FlaskConical, Calendar,
   ChevronDown, ChevronUp, AlertTriangle, FileText, Sparkles, TrendingUp
 } from "lucide-react"
-import { staggerChildren, timelineNodeReveal, cardReveal, listItemUp } from "./motion-presets"
+import { staggerChildren, timelineNodeReveal, listItemUp } from "./motion-presets"
 
 export interface TimelineEvent {
   id: number

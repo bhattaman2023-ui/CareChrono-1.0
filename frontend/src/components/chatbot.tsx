@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { MessageCircle, X, Send, Sparkles, Bot } from "lucide-react"
-import { chatSlideUp, chatMessage } from "./motion-presets"
+import { useEffect, useRef, useState } from "react"
+import { AnimatePresence, motion } from "framer-motion"
+import { Bot, MessageCircle, Send, Sparkles, X } from "lucide-react"
+import { chatMessage, chatSlideUp } from "./motion-presets"
 
 interface Message {
   role: "ai" | "user"
@@ -29,14 +29,12 @@ export default function ChatBot() {
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Auto-scroll on new messages
   useEffect(() => {
     if (open) {
       bottomRef.current?.scrollIntoView({ behavior: "smooth" })
     }
   }, [messages, loading, open])
 
-  // Focus input when opened
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 300)
   }, [open])
@@ -68,13 +66,15 @@ export default function ChatBot() {
     }
   }
 
-  const handleKey = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage() }
+  const handleKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      sendMessage()
+    }
   }
 
   return (
     <>
-      {/* ── Floating trigger button ── */}
       <motion.button
         onClick={() => setOpen(!open)}
         whileHover={{ scale: 1.08 }}
@@ -85,7 +85,7 @@ export default function ChatBot() {
             ? "linear-gradient(135deg, #475569, #334155)"
             : "linear-gradient(135deg, #0284c7, #0ea5e9)",
         }}
-        aria-label="Open AI Chat"
+        aria-label={open ? "Close AI chat" : "Open AI chat"}
       >
         <AnimatePresence mode="wait">
           {open ? (
@@ -111,13 +111,11 @@ export default function ChatBot() {
           )}
         </AnimatePresence>
 
-        {/* Notification dot */}
         {!open && (
           <span className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-emerald-400 border-2 border-white animate-pulse" />
         )}
       </motion.button>
 
-      {/* ── Chat Window ── */}
       <AnimatePresence>
         {open && (
           <motion.div
@@ -133,7 +131,6 @@ export default function ChatBot() {
               backdropFilter: "blur(24px)",
             }}
           >
-            {/* ── Header ── */}
             <div
               className="px-5 py-4 flex items-center gap-3 border-b"
               style={{
@@ -141,7 +138,6 @@ export default function ChatBot() {
                 borderColor: "rgba(99,102,241,0.20)",
               }}
             >
-              {/* AI Avatar */}
               <div className="relative shrink-0">
                 <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/40">
                   <Bot className="h-5 w-5 text-white" />
@@ -163,7 +159,6 @@ export default function ChatBot() {
               </div>
             </div>
 
-            {/* ── Messages ── */}
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
               <AnimatePresence initial={false}>
                 {messages.map((msg, i) => (
@@ -174,7 +169,6 @@ export default function ChatBot() {
                     animate="visible"
                     className={`flex gap-2.5 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}
                   >
-                    {/* Avatar */}
                     {msg.role === "ai" && (
                       <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shrink-0 mt-1">
                         <Bot className="h-4 w-4 text-white" />
@@ -196,7 +190,6 @@ export default function ChatBot() {
                   </motion.div>
                 ))}
 
-                {/* Typing indicator */}
                 {loading && (
                   <motion.div
                     key="typing"
@@ -221,7 +214,6 @@ export default function ChatBot() {
               <div ref={bottomRef} />
             </div>
 
-            {/* ── Input bar ── */}
             <div
               className="px-4 py-3.5 border-t flex items-center gap-2.5"
               style={{
@@ -252,6 +244,7 @@ export default function ChatBot() {
                     : "rgba(51,65,85,0.8)",
                   boxShadow: input.trim() ? "0 4px 16px rgba(99,102,241,0.35)" : "none",
                 }}
+                aria-label="Send message"
               >
                 <Send size={16} className="text-white" />
               </motion.button>

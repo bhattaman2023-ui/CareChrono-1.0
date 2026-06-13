@@ -1,7 +1,6 @@
 "use client"
 
 import React, { useEffect, useRef, useState } from "react"
-import { useRouter } from "next/navigation"
 import { motion, useInView, useMotionValue, useSpring } from "framer-motion"
 import { 
   Activity, ArrowRight, Mic, Cpu, ShieldCheck, Heart, 
@@ -10,7 +9,7 @@ import {
 import ChatBot from "@/components/chatbot"
 import {
   pageFade, sectionReveal, staggerChildren, cardReveal,
-  sectionRevealLeft, sectionRevealRight, staggerFast, badgeReveal
+  sectionRevealRight, staggerFast, badgeReveal
 } from "@/components/motion-presets"
 
 /* ── Animated Counter ── */
@@ -90,9 +89,7 @@ const STEPS = [
 ]
 
 export default function Home() {
-  const router = useRouter()
   const heroRef = useRef<HTMLDivElement>(null)
-  const featuresInView = useInView(heroRef, { once: true })
 
   return (
     <motion.main
@@ -130,10 +127,10 @@ export default function Home() {
         className="glass-panel sticky top-0 z-40 border-b border-white/60"
       >
         <div className="max-w-7xl w-full mx-auto px-6 h-18 flex items-center justify-between py-4">
-          <motion.div
+          <motion.a
+            href="/"
             whileHover={{ scale: 1.02 }}
             className="flex items-center gap-2.5 cursor-pointer"
-            onClick={() => router.push("/")}
           >
             <div className="relative">
               <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-sky-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-sky-500/30">
@@ -144,7 +141,7 @@ export default function Home() {
             <span className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
               CareChrono
             </span>
-          </motion.div>
+          </motion.a>
 
           <motion.div
             variants={badgeReveal}
@@ -207,10 +204,10 @@ export default function Home() {
 
           {/* CTAs */}
           <motion.div variants={sectionReveal} className="flex flex-col sm:flex-row gap-4">
-            <motion.button
+            <motion.a
+              href="/patient-portal"
               whileHover={{ scale: 1.03, boxShadow: "0 16px 48px rgba(2,132,199,0.30)" }}
               whileTap={{ scale: 0.97 }}
-              onClick={() => router.push("/patient-portal")}
               className="group flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl bg-gradient-to-r from-sky-600 to-cyan-600 text-white text-base font-bold shadow-lg shadow-sky-500/25 transition-all"
             >
               <Mic className="h-5 w-5" />
@@ -221,17 +218,17 @@ export default function Home() {
               >
                 <ArrowRight className="h-4.5 w-4.5" />
               </motion.span>
-            </motion.button>
+            </motion.a>
 
-            <motion.button
+            <motion.a
+              href="/doctor-portal"
               whileHover={{ scale: 1.03, borderColor: "rgba(2,132,199,0.5)", backgroundColor: "rgba(240,249,255,0.8)" }}
               whileTap={{ scale: 0.97 }}
-              onClick={() => router.push("/doctor-portal")}
               className="group flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl border-2 border-slate-200 bg-white/80 text-slate-700 text-base font-bold transition-all"
             >
               <User className="h-5 w-5 text-slate-500" />
               Doctor Review Portal
-            </motion.button>
+            </motion.a>
           </motion.div>
 
           {/* Trust badges */}
@@ -302,7 +299,7 @@ export default function Home() {
                         <div className="w-[2px] h-8 mt-1 bg-gradient-to-b from-slate-200 to-transparent" />
                       )}
                     </div>
-                    <div className={`pb-${i < STEPS.length - 1 ? "6" : "0"} pt-1`}>
+                    <div className={`${i < STEPS.length - 1 ? "pb-6" : "pb-0"} pt-1`}>
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-[10px] font-mono font-bold text-slate-400">{step.num}</span>
                         <h4 className="text-sm font-bold text-slate-800">{step.title}</h4>
@@ -396,7 +393,7 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* ── FOOTER ── */}
+      {   /* ── FOOTER ── */}
       <motion.footer
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}

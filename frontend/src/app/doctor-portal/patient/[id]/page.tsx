@@ -11,7 +11,6 @@ import {
   User, 
   TrendingUp, 
   FileText, 
-  ChevronDown, 
   ChevronRight,
   ClipboardCheck,
   Loader2, Brain

@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { VoiceRecorder } from "@/components/VoiceRecorder"
 import {
   pageFade, sectionReveal, staggerChildren, cardReveal,
-  staggerFast, listItemUp, counterReveal
+  staggerFast, listItemUp
 } from "@/components/motion-presets"
 
 interface Patient {
@@ -236,7 +236,7 @@ export default function PatientPortal() {
               variants={staggerFast}
               className="grid grid-cols-2 sm:grid-cols-3 gap-3"
             >
-              {EMOJI_SYMPTOMS.map((item) => (
+              {EMOJI_SYMPTOMS.map((item, index) => (
                 <motion.button
                   key={item.label}
                   variants={cardReveal}
@@ -247,7 +247,7 @@ export default function PatientPortal() {
                 >
                   <motion.span
                     animate={{ y: [0, -3, 0] }}
-                    transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: Math.random() * 2 }}
+                    transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: index * 0.3 }}
                     className="text-4xl mb-2"
                   >
                     {item.emoji}

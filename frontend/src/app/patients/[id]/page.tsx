@@ -5,13 +5,13 @@ import { useParams, useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { 
   ArrowLeft, Download, FileText, Calendar, User, 
-  Plus, Loader2, ChevronRight, ChevronDown, Sparkles, ClipboardList, Brain
+  Plus, Loader2, ChevronRight, Sparkles, ClipboardList, Brain
 } from "lucide-react"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Timeline, TimelineEvent } from "@/components/Timeline"
 import { VoiceRecorder } from "@/components/VoiceRecorder"
-import { pageFade, sectionReveal, staggerChildren, cardReveal, staggerFast } from "@/components/motion-presets"
+import { pageFade, sectionReveal, staggerChildren, cardReveal } from "@/components/motion-presets"
 
 interface Patient {
   id: number
