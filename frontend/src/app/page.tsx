@@ -96,7 +96,7 @@ export default function Home() {
       variants={pageFade}
       initial="hidden"
       animate="visible"
-      className="min-h-screen text-slate-900 flex flex-col relative overflow-hidden hero-gradient-bg font-sans"
+      className="min-h-screen text-slate-900 dark:text-slate-100 flex flex-col relative overflow-hidden hero-gradient-bg font-sans"
     >
       {/* ── Animated background blobs ── */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -124,7 +124,7 @@ export default function Home() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="glass-panel sticky top-0 z-40 border-b border-white/60"
+        className="glass-panel sticky top-0 z-40 border-b border-white/60 dark:border-slate-800/80"
       >
         <div className="max-w-7xl w-full mx-auto px-6 h-18 flex items-center justify-between py-4">
           <motion.a
@@ -138,7 +138,7 @@ export default function Home() {
               </div>
               <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-emerald-400 border-2 border-white animate-pulse" />
             </div>
-            <span className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+            <span className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent dark:from-white dark:to-slate-300">
               CareChrono
             </span>
           </motion.a>
@@ -147,7 +147,7 @@ export default function Home() {
             variants={badgeReveal}
             initial="hidden"
             animate="visible"
-            className="flex items-center gap-2 px-4 py-2 rounded-full border border-sky-200/80 bg-sky-50/80 text-sky-700 text-xs font-bold shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 rounded-full border border-sky-200/80 bg-sky-50/80 text-sky-700 text-xs font-bold shadow-sm dark:border-sky-400/20 dark:bg-sky-400/10 dark:text-sky-200"
           >
             <Heart className="h-3.5 w-3.5 text-sky-500 animate-pulse" />
             AI Symptom Timeline
@@ -168,7 +168,7 @@ export default function Home() {
           {/* Badge */}
           <motion.div
             variants={cardReveal}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-violet-200/80 bg-violet-50/80 text-violet-700 text-xs font-bold"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-violet-200/80 bg-violet-50/80 text-violet-700 text-xs font-bold dark:border-violet-400/20 dark:bg-violet-400/10 dark:text-violet-200"
           >
             <Sparkles className="h-3.5 w-3.5 text-violet-500" />
             Powered by Local AI — Zero Cloud Risk
@@ -177,7 +177,7 @@ export default function Home() {
           {/* Headline */}
           <motion.h1
             variants={sectionReveal}
-            className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-slate-900 leading-[1.08]"
+            className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-slate-900 leading-[1.08] dark:text-white"
           >
             AI-Powered
             <br />
@@ -192,12 +192,12 @@ export default function Home() {
               />
             </span>
             <br />
-            <span className="text-slate-700">for Faster Diagnosis</span>
+            <span className="text-slate-700 dark:text-slate-300">for Faster Diagnosis</span>
           </motion.h1>
 
           <motion.p
             variants={sectionReveal}
-            className="text-lg text-slate-500 max-w-xl leading-relaxed"
+            className="text-lg text-slate-500 max-w-xl leading-relaxed dark:text-slate-300"
           >
             Transform scattered symptom memories into clear, structured clinical timelines before your consultation even begins. Designed for elderly patients and healthcare professionals.
           </motion.p>
