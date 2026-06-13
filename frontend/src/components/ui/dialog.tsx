@@ -30,12 +30,12 @@ export const Dialog: React.FC<DialogProps> = ({ isOpen, onClose, title, children
       />
 
       {/* Dialog Frame */}
-      <div className="relative z-10 w-full max-w-lg rounded-2xl border border-slate-100 bg-white p-6 text-slate-800 shadow-2xl transition-all duration-300 transform scale-100 animate-in fade-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-          <h3 className="text-lg font-bold text-slate-800">{title}</h3>
+      <div className="relative z-10 w-full max-w-lg rounded-2xl border border-slate-100 bg-white p-6 text-slate-800 shadow-2xl transition-all duration-300 transform scale-100 animate-in fade-in zoom-in-95 duration-200 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4 dark:border-slate-800">
+          <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">{title}</h3>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-800 transition-colors"
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-800 transition-colors dark:hover:bg-slate-800 dark:hover:text-slate-100"
           >
             <X className="h-5 w-5" />
           </button>

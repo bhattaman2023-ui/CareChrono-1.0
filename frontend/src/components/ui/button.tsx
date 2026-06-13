@@ -18,16 +18,16 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         variantStyles = "bg-teal-700 text-white hover:bg-teal-600 shadow-md shadow-teal-700/20"
         break
       case "outline":
-        variantStyles = "border border-teal-200 bg-white text-teal-800 hover:bg-teal-50 hover:text-teal-950"
+        variantStyles = "border border-teal-200 bg-white text-teal-800 hover:bg-teal-50 hover:text-teal-950 dark:border-slate-700 dark:bg-slate-900 dark:text-teal-200 dark:hover:bg-slate-800 dark:hover:text-teal-100"
         break
       case "secondary":
-        variantStyles = "bg-teal-50 text-teal-900 hover:bg-teal-100"
+        variantStyles = "bg-teal-50 text-teal-900 hover:bg-teal-100 dark:bg-teal-400/10 dark:text-teal-100 dark:hover:bg-teal-400/15"
         break
       case "destructive":
         variantStyles = "bg-red-600 text-white hover:bg-red-500 shadow-md shadow-red-600/10"
         break
       case "ghost":
-        variantStyles = "text-teal-800 hover:bg-teal-50 hover:text-teal-950"
+        variantStyles = "text-teal-800 hover:bg-teal-50 hover:text-teal-950 dark:text-teal-200 dark:hover:bg-teal-400/10 dark:hover:text-teal-100"
         break
       case "link":
         variantStyles = "text-teal-700 underline-offset-4 hover:underline"

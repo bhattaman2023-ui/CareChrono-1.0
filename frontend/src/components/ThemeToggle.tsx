@@ -1,38 +1,65 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useTheme } from "@/components/ThemeProvider"
 import { Moon, Sun } from "lucide-react"
+import { usePathname } from "next/navigation"
 
-type Theme = "light" | "dark"
-
-function getInitialTheme(): Theme {
-  if (typeof window === "undefined") return "light"
-
-  const savedTheme = window.localStorage.getItem("carechrono-theme")
-  if (savedTheme === "light" || savedTheme === "dark") return savedTheme
-
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+type ThemeToggleProps = {
+  variant?: "inline" | "floating"
 }
 
-export default function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>(() => getInitialTheme())
-  const isDark = theme === "dark"
+export default function ThemeToggle({ variant = "inline" }: ThemeToggleProps) {
+  const { theme, toggleTheme } = useTheme()
+  const pathname = usePathname()
 
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", isDark)
-    document.documentElement.style.colorScheme = theme
-    window.localStorage.setItem("carechrono-theme", theme)
-  }, [isDark, theme])
+  // Prevent double rendering of the toggle on the landing page
+  if (variant === "floating" && pathname === "/") {
+    return null
+  }
+
+  const isDark = theme === "dark"
+  const nextThemeLabel = isDark ? "Light" : "Dark"
+  
+  const buttonStyle =
+    variant === "floating"
+      ? {
+          position: "fixed" as const,
+          top: "118px",
+          right: "24px",
+          zIndex: 2147483647,
+        }
+      : undefined
 
   return (
     <button
       type="button"
-      onClick={() => setTheme(isDark ? "light" : "dark")}
+      onClick={toggleTheme}
       aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
       title={`Switch to ${isDark ? "light" : "dark"} mode`}
-      className="fixed bottom-5 left-5 z-50 grid h-12 w-12 place-items-center rounded-full border border-slate-200 bg-white/90 text-slate-700 shadow-lg shadow-slate-900/10 backdrop-blur transition hover:scale-105 hover:border-sky-300 dark:border-slate-700 dark:bg-slate-900/90 dark:text-slate-100 dark:shadow-black/30"
+      style={{
+        ...buttonStyle,
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "8px",
+        flexShrink: 0,
+        minWidth: "104px",
+        height: "44px",
+        padding: "0 16px",
+        borderRadius: "9999px",
+        border: isDark ? "1px solid rgba(51, 65, 85, 0.9)" : "1px solid rgba(14, 165, 233, 0.45)",
+        background: isDark ? "rgba(15, 23, 42, 0.96)" : "rgba(255, 255, 255, 0.98)",
+        color: isDark ? "#f8fafc" : "#0f172a",
+        boxShadow: isDark ? "0 18px 40px rgba(0, 0, 0, 0.38)" : "0 18px 40px rgba(2, 132, 199, 0.18)",
+        backdropFilter: "blur(14px)",
+        fontSize: "14px",
+        fontWeight: 800,
+        lineHeight: 1,
+        cursor: "pointer",
+      }}
+      className="transition hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
     >
-      {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+      {isDark ? <Sun className="h-5 w-5 text-amber-300" /> : <Moon className="h-5 w-5 text-sky-600" />}
+      <span>{nextThemeLabel}</span>
     </button>
   )
 }

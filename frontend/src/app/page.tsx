@@ -7,6 +7,7 @@ import {
   User, Clipboard, Sparkles, Brain, Clock, Star
 } from "lucide-react"
 import ChatBot from "@/components/chatbot"
+import ThemeToggle from "@/components/ThemeToggle"
 import {
   pageFade, sectionReveal, staggerChildren, cardReveal,
   sectionRevealRight, staggerFast, badgeReveal
@@ -143,15 +144,18 @@ export default function Home() {
             </span>
           </motion.a>
 
-          <motion.div
-            variants={badgeReveal}
-            initial="hidden"
-            animate="visible"
-            className="flex items-center gap-2 px-4 py-2 rounded-full border border-sky-200/80 bg-sky-50/80 text-sky-700 text-xs font-bold shadow-sm dark:border-sky-400/20 dark:bg-sky-400/10 dark:text-sky-200"
-          >
-            <Heart className="h-3.5 w-3.5 text-sky-500 animate-pulse" />
-            AI Symptom Timeline
-          </motion.div>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <motion.div
+              variants={badgeReveal}
+              initial="hidden"
+              animate="visible"
+              className="flex items-center gap-2 px-4 py-2 rounded-full border border-sky-200/80 bg-sky-50/80 text-sky-700 text-xs font-bold shadow-sm dark:border-sky-400/20 dark:bg-sky-400/10 dark:text-sky-200"
+            >
+              <Heart className="h-3.5 w-3.5 text-sky-500 animate-pulse" />
+              AI Symptom Timeline
+            </motion.div>
+          </div>
         </div>
       </motion.header>
 

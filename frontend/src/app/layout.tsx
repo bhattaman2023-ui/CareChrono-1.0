@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import ThemeToggle from "@/components/ThemeToggle";
 import "./globals.css";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export const metadata: Metadata = {
   title: "CareChrono - AI Clinical Timelines",
@@ -30,10 +31,11 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        {children}
-        <ThemeToggle />
+        <ThemeProvider>
+          {children}
+          <ThemeToggle variant="floating" />
+        </ThemeProvider>
       </body>
     </html>
   );
 }
-

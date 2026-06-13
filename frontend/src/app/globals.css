@@ -392,12 +392,36 @@ body,
     linear-gradient(160deg, #020617 0%, #0f172a 50%, #111827 100%);
 }
 
+.dark-hero-gradient-bg {
+  background:
+    radial-gradient(ellipse 80% 60% at 70% 0%, rgba(14,165,233,0.10) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 0% 100%, rgba(20,184,166,0.08) 0%, transparent 60%),
+    linear-gradient(160deg, #f0f9ff 0%, #f8fafc 50%, #f0fdf4 100%);
+}
+
+.dark .dark-hero-gradient-bg {
+  background:
+    radial-gradient(ellipse 80% 60% at 70% 0%, rgba(99,102,241,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 0% 100%, rgba(20,184,166,0.08) 0%, transparent 60%),
+    linear-gradient(160deg, #020617 0%, #0f172a 50%, #0d1425 100%);
+}
+
 /* Global theme adapter.
    Keeps the existing UI structure/classes, but lets the single toggle affect
    pages that were built with hardcoded light Tailwind utility colors. */
 .dark body {
   background: #020617;
   color: #e2e8f0;
+}
+
+.dark [style*="linear-gradient(160deg"],
+.dark [style*="#f0f9ff"],
+.dark [style*="#f8fafc"],
+.dark [style*="#f0fdf4"] {
+  background:
+    radial-gradient(ellipse 80% 60% at 70% 0%, rgba(14,165,233,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 0% 100%, rgba(20,184,166,0.08) 0%, transparent 60%),
+    linear-gradient(160deg, #020617 0%, #0f172a 50%, #111827 100%) !important;
 }
 
 .dark [class*="bg-white"],
@@ -472,11 +496,90 @@ body,
   color: #64748b !important;
 }
 
-.dark-hero-gradient-bg {
-  background:
-    radial-gradient(ellipse 80% 60% at 70% 0%, rgba(99,102,241,0.12) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 0% 100%, rgba(20,184,166,0.08) 0%, transparent 60%),
-    linear-gradient(160deg, #020617 0%, #0f172a 50%, #0d1425 100%);
+html:not(.dark) .dark-hero-gradient-bg [class*="bg-slate-950"],
+html:not(.dark) .dark-hero-gradient-bg [class*="bg-slate-900"],
+html:not(.dark) .dark-hero-gradient-bg [class*="bg-slate-800"],
+html:not(.dark) .dark-hero-gradient-bg [class*="bg-indigo-950"],
+html:not(.dark) .dark-hero-gradient-bg [class*="bg-purple-950"] {
+  background-color: rgba(255, 255, 255, 0.82) !important;
+}
+
+html:not(.dark) .dark-hero-gradient-bg [class*="text-white"],
+html:not(.dark) .dark-hero-gradient-bg [class*="text-slate-100"],
+html:not(.dark) .dark-hero-gradient-bg [class*="text-slate-200"] {
+  color: #0f172a !important;
+}
+
+html:not(.dark) .dark-hero-gradient-bg [class*="bg-gradient"][class*="text-white"],
+html:not(.dark) .dark-hero-gradient-bg [class*="from-"][class*="text-white"],
+html:not(.dark) .dark-hero-gradient-bg [class*="to-"][class*="text-white"],
+html:not(.dark) .dark-hero-gradient-bg [class*="bg-indigo-600"][class*="text-white"],
+html:not(.dark) .dark-hero-gradient-bg [class*="bg-teal-500"][class*="text-white"] {
+  color: #ffffff !important;
+}
+
+html:not(.dark) .dark-hero-gradient-bg [class*="text-slate-300"],
+html:not(.dark) .dark-hero-gradient-bg [class*="text-slate-400"] {
+  color: #475569 !important;
+}
+
+html:not(.dark) .dark-hero-gradient-bg [class*="text-slate-500"] {
+  color: #64748b !important;
+}
+
+html:not(.dark) .dark-hero-gradient-bg [class*="border-slate-800"],
+html:not(.dark) .dark-hero-gradient-bg [class*="border-slate-700"],
+html:not(.dark) .dark-hero-gradient-bg [class*="border-indigo-500"] {
+  border-color: rgba(203, 213, 225, 0.86) !important;
+}
+
+html:not(.dark) .dark-hero-gradient-bg [class*="divide-slate-800"] > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(226, 232, 240, 0.92) !important;
+}
+
+html:not(.dark) .dark-hero-gradient-bg input,
+html:not(.dark) .dark-hero-gradient-bg textarea,
+html:not(.dark) .dark-hero-gradient-bg select {
+  background-color: rgba(255, 255, 255, 0.88) !important;
+  border-color: rgba(203, 213, 225, 0.9) !important;
+  color: #0f172a !important;
+}
+
+.dark [style*="rgba(255,255,255"],
+.dark [style*="rgba(255, 255, 255"],
+.dark [style*="#ffffff"] {
+  background: rgba(15, 23, 42, 0.86) !important;
+}
+
+.dark [style*="borderColor: #f1f5f9"],
+.dark [style*="#f1f5f9"] {
+  border-color: rgba(51, 65, 85, 0.86) !important;
+}
+
+.dark [style*="#1f2937"],
+.dark [style*="color: rgb(31, 41, 55)"],
+.dark [style*="#10201f"],
+.dark [style*="color: rgb(16, 32, 31)"] {
+  color: #f8fafc !important;
+}
+
+.dark svg line[stroke="#f1f5f9"],
+.dark svg path[stroke="#f1f5f9"],
+.dark [stroke="#f1f5f9"] {
+  stroke: rgba(51, 65, 85, 0.4) !important;
+}
+
+html:not(.dark) .dark-hero-gradient-bg [class*="bg-slate-800"] {
+  background-color: rgba(241, 245, 249, 0.9) !important;
+}
+html:not(.dark) .dark-hero-gradient-bg [class*="bg-slate-800"]:hover {
+  background-color: rgba(226, 232, 240, 0.9) !important;
+}
+html:not(.dark) .dark-hero-gradient-bg [class*="text-slate-400"] {
+  color: #64748b !important;
+}
+html:not(.dark) .dark-hero-gradient-bg [class*="hover:text-white"]:hover {
+  color: #0f172a !important;
 }
 
 /* ═══════════════════════════════════════════════════
