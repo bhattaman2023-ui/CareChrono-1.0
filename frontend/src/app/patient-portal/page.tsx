@@ -10,6 +10,7 @@ import {
   pageFade, sectionReveal, staggerChildren, cardReveal,
   staggerFast, listItemUp
 } from "@/components/motion-presets"
+import { translations, Language } from "@/components/translations"
 
 interface Patient {
   id: number
@@ -76,6 +77,24 @@ export default function PatientPortal() {
   const [symptomLogs, setSymptomLogs] = useState<SymptomLog[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const [lang, setLang] = useState<Language>("en")
+
+  useEffect(() => {
+    const savedLang = localStorage.getItem("lang") as Language
+    if (savedLang === "en" || savedLang === "hi") {
+      setLang(savedLang)
+    }
+  }, [])
+
+  const handleLanguageChange = (newLang: Language) => {
+    setLang(newLang)
+    localStorage.setItem("lang", newLang)
+  }
+
+  const t = useCallback((key: keyof typeof translations.en) => {
+    return translations[lang][key] || translations.en[key] || key
+  }, [lang])
 
   const fetchPatientDetails = useCallback(async (id: number) => {
     setLoading(true)
@@ -164,27 +183,57 @@ export default function PatientPortal() {
               <Activity className="h-4 w-4 text-white" />
             </div>
             <span className="text-lg font-extrabold tracking-tight text-slate-800">CareChrono</span>
-            <span className="text-[10px] bg-sky-50 border border-sky-200 text-sky-700 px-2 py-0.5 rounded-full font-bold">Patient App</span>
+            <span className="text-[10px] bg-sky-50 border border-sky-200 text-sky-700 px-2 py-0.5 rounded-full font-bold">{t("patientApp")}</span>
           </div>
 
-          {/* Demo patient switcher */}
-          <div className="flex items-center gap-1.5 bg-slate-100/80 border border-slate-200/60 rounded-xl p-1">
-            <span className="text-[10px] font-bold text-slate-400 px-2 uppercase tracking-wider">Demo:</span>
-            {patients.map(p => (
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Demo patient switcher */}
+            <div className="flex items-center gap-1.5 bg-slate-100/80 border border-slate-200/60 rounded-xl p-1">
+              <span className="text-[10px] font-bold text-slate-400 px-2 uppercase tracking-wider">{t("demo")}</span>
+              {patients.map(p => (
+                <motion.button
+                  key={p.id}
+                  onClick={() => handlePatientChange(p.id)}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${
+                    selectedPatientId === p.id
+                      ? "bg-sky-600 text-white shadow-sm shadow-sky-500/30"
+                      : "text-slate-600 hover:bg-white hover:shadow-sm"
+                  }`}
+                >
+                  {p.name}
+                </motion.button>
+              ))}
+            </div>
+
+            {/* Language Switcher */}
+            <div className="flex items-center bg-slate-100/80 border border-slate-200/60 rounded-xl p-1">
               <motion.button
-                key={p.id}
-                onClick={() => handlePatientChange(p.id)}
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
-                className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${
-                  selectedPatientId === p.id
+                onClick={() => handleLanguageChange("en")}
+                className={`text-xs font-bold px-2.5 py-1.5 rounded-lg transition-all ${
+                  lang === "en"
                     ? "bg-sky-600 text-white shadow-sm shadow-sky-500/30"
                     : "text-slate-600 hover:bg-white hover:shadow-sm"
                 }`}
               >
-                {p.name}
+                EN
               </motion.button>
-            ))}
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => handleLanguageChange("hi")}
+                className={`text-xs font-bold px-2.5 py-1.5 rounded-lg transition-all ${
+                  lang === "hi"
+                    ? "bg-sky-600 text-white shadow-sm shadow-sky-500/30"
+                    : "text-slate-600 hover:bg-white hover:shadow-sm"
+                }`}
+              >
+                हिन्दी
+              </motion.button>
+            </div>
           </div>
         </div>
       </motion.header>
@@ -207,16 +256,16 @@ export default function PatientPortal() {
           >
             <motion.div variants={sectionReveal} className="flex items-center gap-2 mb-1">
               <Heart className="h-4 w-4 text-rose-400 animate-pulse" />
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Good to see you</span>
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t("goodToSeeYou")}</span>
             </motion.div>
             <motion.h2 variants={sectionReveal} className="text-4xl font-extrabold text-slate-900 tracking-tight">
-              Hello,{" "}
+              {t("hello")},{" "}
               <span className="bg-gradient-to-r from-sky-600 to-cyan-600 bg-clip-text text-transparent">
                 {patient.name}
               </span>
             </motion.h2>
             <motion.p variants={sectionReveal} className="text-lg text-slate-500 font-medium">
-              How are you feeling today?
+              {t("greetingQuestion")}
             </motion.p>
           </motion.div>
 
@@ -228,7 +277,7 @@ export default function PatientPortal() {
             className="space-y-4"
           >
             <motion.div variants={sectionReveal} className="flex items-center gap-2">
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Quick Log Symptom</span>
+              <span className="text-xs font-black uppercase tracking-widest text-slate-400">{t("quickLog")}</span>
               <div className="h-px flex-1 bg-slate-200" />
             </motion.div>
 
@@ -252,7 +301,7 @@ export default function PatientPortal() {
                   >
                     {item.emoji}
                   </motion.span>
-                  <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900">{item.label}</span>
+                  <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900">{t(item.label as any)}</span>
                   <ChevronRight className="h-3.5 w-3.5 text-slate-400 mt-1 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </motion.button>
               ))}
@@ -280,9 +329,9 @@ export default function PatientPortal() {
                     <Mic className="h-6 w-6" />
                   </div>
                   <div>
-                    <h4 className="font-extrabold text-lg text-slate-800">Voice Assistant Logging</h4>
+                    <h4 className="font-extrabold text-lg text-slate-800">{t("voiceTitle")}</h4>
                     <p className="text-sm text-slate-500 leading-relaxed mt-0.5">
-                      Don&apos;t want to type? Speak naturally — <span className="font-medium text-slate-600">&quot;I&apos;ve had a mild fever and sore throat since yesterday.&quot;</span>
+                      {t("voiceDesc")} <span className="font-medium text-slate-600">{t("voiceExample")}</span>
                     </p>
                   </div>
                 </div>
@@ -312,11 +361,11 @@ export default function PatientPortal() {
 
                   <div className="flex items-center gap-2 text-sky-200 font-bold text-xs uppercase tracking-widest relative z-10">
                     <Sparkles className="h-4 w-4 animate-pulse" />
-                    AI Health Insights
+                    {t("aiInsights")}
                   </div>
 
                   <h4 className="text-xl font-extrabold text-white leading-snug relative z-10">
-                    Personalized Symptom Analysis
+                    {t("personalizedAnalysis")}
                   </h4>
 
                   <p className="text-sm text-sky-100/90 leading-relaxed relative z-10">
@@ -333,8 +382,8 @@ export default function PatientPortal() {
                         <ShieldAlert className="h-5 w-5 text-red-300" />
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-red-200">Critical Alert</p>
-                        <p className="text-xs text-red-300/80 mt-0.5">Escalating symptoms detected. Urgent diagnostic summary sent to Dr. Jenkins.</p>
+                        <p className="text-xs font-bold text-red-200">{t("criticalAlert")}</p>
+                        <p className="text-xs text-red-300/80 mt-0.5">{t("criticalDesc")}</p>
                       </div>
                     </motion.div>
                   )}
@@ -352,9 +401,9 @@ export default function PatientPortal() {
             className="space-y-4"
           >
             <motion.div variants={sectionReveal} className="flex items-center gap-2">
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Your Recent Logs</span>
+              <span className="text-xs font-black uppercase tracking-widest text-slate-400">{t("recentLogs")}</span>
               <div className="h-px flex-1 bg-slate-200" />
-              <span className="text-xs text-slate-400 font-medium">{symptomLogs.length} entries</span>
+              <span className="text-xs text-slate-400 font-medium">{symptomLogs.length} {t("entries")}</span>
             </motion.div>
 
             {symptomLogs.length === 0 ? (
@@ -363,7 +412,7 @@ export default function PatientPortal() {
                 className="p-10 text-center bg-white/80 border border-slate-200 rounded-3xl text-slate-400 text-sm"
               >
                 <div className="text-3xl mb-3">📋</div>
-                No logs recorded yet. Tap a symptom button above to start!
+                {t("noLogs")}
               </motion.div>
             ) : (
               <div className="space-y-3">
@@ -401,7 +450,7 @@ export default function PatientPortal() {
                                 if (s === "Medium" || s === "Moderate") badgeColor = "bg-amber-50 border-amber-200 text-amber-700"
                                 return (
                                   <span key={sym} className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${badgeColor}`}>
-                                    {sym} · {s}
+                                    {t(sym as any)} · {t(s as any)}
                                   </span>
                                 )
                               })}

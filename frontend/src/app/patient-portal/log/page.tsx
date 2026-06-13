@@ -1,11 +1,12 @@
 "use client"
 
-import React, { useCallback, useState, Suspense } from "react"
+import React, { useCallback, useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { ArrowLeft, Check, Loader2, Sparkles, AlertCircle, Activity, Brain } from "lucide-react"
 import { VoiceRecorder } from "@/components/VoiceRecorder"
 import { pageFade, sectionReveal, staggerFast, cardReveal } from "@/components/motion-presets"
+import { translations, Language } from "@/components/translations"
 
 const getErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : "Something went wrong"
@@ -26,6 +27,19 @@ function SymptomLogContent() {
   const patientId = searchParams.get("patient_id") || "1"
   const preSelectedSymptom = searchParams.get("symptom") || ""
   const dictationText = searchParams.get("dictation") || ""
+
+  const [lang, setLang] = useState<Language>("en")
+
+  useEffect(() => {
+    const savedLang = localStorage.getItem("lang") as Language
+    if (savedLang === "en" || savedLang === "hi") {
+      setLang(savedLang)
+    }
+  }, [])
+
+  const t = useCallback((key: keyof typeof translations.en) => {
+    return translations[lang][key] || translations.en[key] || key
+  }, [lang])
 
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>(() =>
     preSelectedSymptom ? [preSelectedSymptom] : []
@@ -120,14 +134,14 @@ function SymptomLogContent() {
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border-2 border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 font-bold text-xs shadow-sm transition-all"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back
+            {t("back")}
           </motion.button>
 
           <div className="flex items-center gap-2">
             <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-sky-500 to-cyan-500 flex items-center justify-center shadow-md shadow-sky-500/25">
               <Activity className="h-4 w-4 text-white" />
             </div>
-            <h2 className="text-sm font-extrabold text-slate-800">Log Symptoms</h2>
+            <h2 className="text-sm font-extrabold text-slate-800">{t("logSymptoms")}</h2>
           </div>
 
           <div className="w-16" />
@@ -161,7 +175,7 @@ function SymptomLogContent() {
           >
             <div className="flex items-center gap-2 mb-1">
               <span className="h-6 w-6 rounded-full bg-sky-100 border border-sky-200 text-sky-600 flex items-center justify-center text-xs font-black">1</span>
-              <label className="text-sm font-extrabold uppercase tracking-wide text-slate-600">Log Date</label>
+              <label className="text-sm font-extrabold uppercase tracking-wide text-slate-600">{t("logDate")}</label>
             </div>
             <input
               type="date"
@@ -182,12 +196,12 @@ function SymptomLogContent() {
             <div className="flex items-center gap-2">
               <span className="h-6 w-6 rounded-full bg-sky-100 border border-sky-200 text-sky-600 flex items-center justify-center text-xs font-black">2</span>
               <div>
-                <h3 className="text-base font-extrabold text-slate-800">Select Symptoms</h3>
-                <p className="text-xs text-slate-400 mt-0.5">Which symptoms are you experiencing today?</p>
+                <h3 className="text-base font-extrabold text-slate-800">{t("selectSymptoms")}</h3>
+                <p className="text-xs text-slate-400 mt-0.5">{t("symptomQuestion")}</p>
               </div>
               {selectedSymptoms.length > 0 && (
                 <span className="ml-auto text-xs font-bold text-sky-600 bg-sky-50 border border-sky-200 px-2.5 py-0.5 rounded-full">
-                  {selectedSymptoms.length} selected
+                  {selectedSymptoms.length} {t("selectedCount")}
                 </span>
               )}
             </div>
@@ -221,7 +235,7 @@ function SymptomLogContent() {
                     >
                       {item.emoji}
                     </motion.span>
-                    <span className="text-sm font-bold flex-1">{item.label}</span>
+                    <span className="text-sm font-bold flex-1">{t(item.label as any)}</span>
                     <AnimatePresence>
                       {isSelected && (
                         <motion.span
@@ -255,8 +269,8 @@ function SymptomLogContent() {
                   <div className="flex items-center gap-2">
                     <span className="h-6 w-6 rounded-full bg-sky-100 border border-sky-200 text-sky-600 flex items-center justify-center text-xs font-black">3</span>
                     <div>
-                      <h3 className="text-base font-extrabold text-slate-800">How bad is each symptom?</h3>
-                      <p className="text-xs text-slate-400 mt-0.5">Set the severity for today&apos;s entries.</p>
+                      <h3 className="text-base font-extrabold text-slate-800">{t("severityQuestion")}</h3>
+                      <p className="text-xs text-slate-400 mt-0.5">{t("severityDesc")}</p>
                     </div>
                   </div>
 
@@ -271,12 +285,12 @@ function SymptomLogContent() {
                           transition={{ delay: idx * 0.06 }}
                           className={`space-y-2.5 ${idx > 0 ? "pt-4" : ""}`}
                         >
-                          <span className="text-sm font-bold text-slate-700 block">{sym} Severity</span>
+                          <span className="text-sm font-bold text-slate-700 block">{t(sym as any)} {t("severityTitle")}</span>
                           <div className="grid grid-cols-3 gap-2">
                             {[
-                              { key: "Low",    label: "Mild",     color: "from-sky-500 to-indigo-500",   sel: "bg-gradient-to-r from-sky-500 to-indigo-500 text-white border-transparent shadow-lg shadow-sky-500/20" },
-                              { key: "Medium", label: "Moderate", color: "from-amber-400 to-orange-500", sel: "bg-gradient-to-r from-amber-400 to-orange-500 text-white border-transparent shadow-lg shadow-amber-500/20" },
-                              { key: "High",   label: "Severe",   color: "from-red-500 to-rose-600",     sel: "bg-gradient-to-r from-red-500 to-rose-600 text-white border-transparent shadow-lg shadow-red-500/20" },
+                              { key: "Low",    label: "mild",     sel: "bg-gradient-to-r from-sky-500 to-indigo-500 text-white border-transparent shadow-lg shadow-sky-500/25" },
+                              { key: "Medium", label: "moderate", sel: "bg-gradient-to-r from-amber-400 to-orange-500 text-white border-transparent shadow-lg shadow-amber-500/25" },
+                              { key: "High",   label: "severe",   sel: "bg-gradient-to-r from-red-500 to-rose-600 text-white border-transparent shadow-lg shadow-red-500/25" },
                             ].map(({ key, label, sel }) => (
                               <motion.button
                                 key={key}
@@ -288,7 +302,7 @@ function SymptomLogContent() {
                                   currentSev === key ? sel : "border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300"
                                 }`}
                               >
-                                {label}
+                                {t(label as any)}
                               </motion.button>
                             ))}
                           </div>
@@ -312,8 +326,8 @@ function SymptomLogContent() {
             <div className="flex items-center gap-2">
               <span className="h-6 w-6 rounded-full bg-sky-100 border border-sky-200 text-sky-600 flex items-center justify-center text-xs font-black">4</span>
               <div>
-                <h3 className="text-base font-extrabold text-slate-800">Notes or Voice Recording</h3>
-                <p className="text-xs text-slate-400 mt-0.5">Describe how you feel. Tap below to speak.</p>
+                <h3 className="text-base font-extrabold text-slate-800">{t("notesVoice")}</h3>
+                <p className="text-xs text-slate-400 mt-0.5">{t("notesDesc")}</p>
               </div>
             </div>
 
@@ -322,7 +336,7 @@ function SymptomLogContent() {
             <textarea
               rows={4}
               className="w-full rounded-2xl border-2 border-slate-200 bg-slate-50/60 p-4 text-sm text-slate-800 placeholder:text-slate-400 focus:border-sky-400 focus:outline-none focus:bg-white resize-y transition-all"
-              placeholder="Type additional details or use voice above..."
+              placeholder={t("placeholder")}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />
@@ -345,13 +359,13 @@ function SymptomLogContent() {
               {loading ? (
                 <>
                   <Loader2 className="h-5 w-5 animate-spin" />
-                  <span>AI Compiling Timeline...</span>
+                  <span>{t("compiling")}</span>
                   <Brain className="h-5 w-5 animate-pulse" />
                 </>
               ) : (
                 <>
                   <Sparkles className="h-5 w-5" />
-                  <span>Submit Symptom Log</span>
+                  <span>{t("submit")}</span>
                 </>
               )}
             </motion.button>
